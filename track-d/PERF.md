@@ -7,9 +7,19 @@ Every step from the reference to your final version, each with the live-board ru
 | 0 | The reference, unchanged | (official baseline) | 72.69 | 400 | 0 |
 | 1 | Baseline C++20 | (local verification) | 9.56 | 30 (image MB) | Baseline |
 | 2 | Parallel 6-worker Dijkstra queries on immutable CSR + sequential ordered emit + -flto | run-c2d04a261905 | 2.2107 | 184.84 | 39.96 (K=6.30) |
-| 3 | Exact O(1) early rejection (out_degree[s]==0, in_degree[t]==0 via 217KB bitset) | (pending board run) | ~1.65 (est. board) | ~185.0 | ~45.0 (K~7.98) |
+| 3 | Exact O(1) early rejection (out_degree[s]==0, in_degree[t]==0 via 217KB bitset) | run-3395c8a050e6 | 1.5937 | 185.01 | 43.34 (K=7.36) |
 
 ### Verification Evidence & Measurement Log
+
+- **Official Liveboard Telemetry (Team: Kujo Jotaro, Commit d39a4dd)**:
+  - Run ID: `run-3395c8a050e6`
+  - Commit: `d39a4dd08ebc7089434a539e44ada37c9dc65171`
+  - Wall Time (T): 1.593717 s (vs 2.210724 s on Step 2: 28% speedup)
+  - Peak Memory (M): 185,012,224 bytes (~185.01 MB)
+  - Source Lines (S): 198
+  - Dependencies (D): 1
+  - K Efficiency Coefficient: 7.358379 (up from 6.301906: +1.06 jump)
+  - Points: 43.339108 (up from 39.958870: +3.38 points)
 
 - **Official Liveboard Telemetry (Team: Kujo Jotaro, Commit 79152f7)**:
   - Run ID: `run-c2d04a261905`

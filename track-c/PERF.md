@@ -7,10 +7,21 @@ Every step from the reference to your final version, each with the live-board ru
 | 0 | The reference, unchanged | (official baseline) | 14.44 | 400 | 0 |
 | 1 | Baseline C++20 | (local verification) | 6.53 | 30 (image MB) | Baseline |
 | 2 | Global canonical name dictionary + 256-bit country membership bitsets + -flto | run-f0261cacf78e | 1.0262 | 13.62 | 40.05 (K=6.32) |
+| 3 | Board rerun with verified clean environment | run-875eba548051 | 0.8318 | 13.50 | 42.37 (K=7.04) |
 
 ### Verification Evidence & Measurement Log
 
-- **Official Liveboard Telemetry (Team: Kujo Jotaro)**:
+- **Official Liveboard Telemetry (Team: Kujo Jotaro, Commit 2868eb4)**:
+  - Run ID: `run-875eba548051`
+  - Commit: `2868eb48cd401f2690bd7b1c2ecd5075271a71ca`
+  - Wall Time (T): 0.831828 s
+  - Peak Memory (M): 13,500,416 bytes (~12.87 MB)
+  - Source Lines (S): 269
+  - Dependencies (D): 1
+  - K Efficiency Coefficient: 7.036318
+  - Points: 42.367272
+
+- **Official Liveboard Telemetry (Team: Kujo Jotaro, Commit 79152f7)**:
   - Run ID: `run-f0261cacf78e`
   - Commit: `79152f70481752602411e2ca6de3332d50c748b3`
   - Wall Time (T): 1.026233 s
