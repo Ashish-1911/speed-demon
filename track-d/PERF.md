@@ -7,10 +7,11 @@ Every step from the reference to your final version, each with the live-board ru
 | 0 | The reference, unchanged | (official baseline) | 72.69 | 400 | 0 |
 | 1 | Baseline C++20 | (local verification) | 9.56 | 30 (image MB) | Baseline |
 | 2 | Parallel 6-worker Dijkstra queries on immutable CSR + sequential ordered emit + -flto | run-c2d04a261905 | 2.2107 | 184.84 | 39.96 (K=6.30) |
+| 3 | Exact O(1) early rejection (out_degree[s]==0, in_degree[t]==0 via 217KB bitset) | (pending board run) | ~1.65 (est. board) | ~185.0 | ~45.0 (K~7.98) |
 
 ### Verification Evidence & Measurement Log
 
-- **Official Liveboard Telemetry (Team: Kujo Jotaro)**:
+- **Official Liveboard Telemetry (Team: Kujo Jotaro, Commit 79152f7)**:
   - Run ID: `run-c2d04a261905`
   - Commit: `79152f70481752602411e2ca6de3332d50c748b3`
   - Wall Time (T): 2.210724 s
@@ -19,11 +20,21 @@ Every step from the reference to your final version, each with the live-board ru
   - Dependencies (D): 1
   - K Efficiency Coefficient: 6.297634
   - Points: 39.958870
-- **Docker Image Size**: 30 MB (verified with `docker image inspect`, allowlist compliant)
-- **Local Timings (containerized with check.py on Step 2)**:
-  - Tiny (40 queries): 0.35 s (SHA-256 `ecaca77d3221fe3928109da36480cfdb39f288f2e57ecbc61d3d7706d5cb4bd5` — PASS)
-  - Sample (200 queries): 0.72 s (SHA-256 `a4c76ed030bc7e365db33191f6cf74708fba7f25eb48d64c8c4279f2e57046a0` — PASS)
-  - Full (2,000 queries): 4.52 s containerized, 4.60 s process real wall clock (SHA-256 `a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e` — PASS)
-- **Fresh-seed Generalization (Sample scale)**:
-  - Seed 42: PASS (exact byte match against reference)
-  - Seed 99: PASS (exact byte match against reference)
+
+- **Step 3 Optimization (Exact O(1) Early Rejection)**:
+  - Bottleneck analysis on all 2,000 full queries: Top 5% most expensive queries accounted for 52.4% of total query CPU time. Specifically, rare queries where `in_degree[t] == 0` forced Dijkstra to search the entire strongly-connected component (~1.74M nodes) before failing.
+  - Solution: Track non-zero in-degrees during CSR ingestion with a compact bitset `std::vector<uint64_t> has_in((n + 63) / 64, 0)` (+217 KB memory).
+  - Exact early filters before Dijkstra initialization:
+    - If `s == t`, return 0.
+    - If `head[s] == head[s+1]` (`out_degree[s] == 0`), return -1.
+    - If `!(has_in[t >> 6] & (1ULL << (t & 63)))` (`in_degree[t] == 0`), return -1.
+  - Microbenchmark (all 2,000 full queries, 6 threads): Query time dropped from 2.02 s to 1.42 s (**30% query speedup**).
+  - Containerized local run with `check.py`: Full runtime dropped from **4.52 s** to **3.52 s** (**-1.00 s container wall time**).
+
+- **Docker Image & Correctness**:
+  - Image size: 30 MB (verified with `docker image inspect`, allowlist compliant)
+  - Full dataset (2,000 queries): SHA-256 `a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e` (PASS)
+  - Tiny dataset (40 queries): SHA-256 `ecaca77d3221fe3928109da36480cfdb39f288f2e57ecbc61d3d7706d5cb4bd5` (PASS)
+  - Sample dataset (200 queries): SHA-256 `a4c76ed030bc7e365db33191f6cf74708fba7f25eb48d64c8c4279f2e57046a0` (PASS)
+  - Seed 42: SHA-256 `e003ecd1553a9010cca836975f759aa8588403070e83ed359cc3fd991a2275a6` (PASS)
+  - Seed 99: SHA-256 `7d8a37adcc1fdb2bd8668d47513e42ad8f4459d363553cba96a2cd32994bf9cb` (PASS)

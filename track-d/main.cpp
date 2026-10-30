@@ -94,12 +94,14 @@ int main(int argc, char* argv[]) {
 
     std::vector<RawEdge> raw_edges(m);
     std::vector<uint32_t> head(n + 1, 0);
+    std::vector<uint64_t> has_in((n + 63) / 64, 0);
 
     for (uint32_t i = 0; i < m; ++i) {
         g_in.next_uint(raw_edges[i].u);
         g_in.next_uint(raw_edges[i].v);
         g_in.next_uint(raw_edges[i].w);
         head[raw_edges[i].u + 1]++;
+        has_in[raw_edges[i].v >> 6] |= (1ULL << (raw_edges[i].v & 63));
     }
 
     // Prefix sum for CSR head offsets
@@ -152,8 +154,11 @@ int main(int argc, char* argv[]) {
             if (idx >= queries.size()) return;
             auto [s,t] = queries[idx];
             if (s == t) { results[idx] = 0; continue; }
+            if (head[s] == head[s + 1]) { results[idx] = -1; continue; }
+            if ((has_in[t >> 6] & (1ULL << (t & 63))) == 0) { results[idx] = -1; continue; }
+
             if (++current_epoch == 0) {
-                std::fill(seen_epoch.begin(),seen_epoch.end(),0);
+                std::fill(seen_epoch.begin(), seen_epoch.end(), 0);
                 current_epoch = 1;
             }
             dist[s] = 0;

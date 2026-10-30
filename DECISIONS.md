@@ -77,7 +77,7 @@
   - *Evaluation*: Evaluated `-flto` and PGO. `-flto -O3` in GCC 15 yielded a ~28% user CPU speedup on Track A (0.558 s down to 0.402 s), while compiling in 1.1s - 1.3s offline. Added `-flto` across all three tracks' Dockerfiles.
   - *Decision*: **KEPT**.
 
-### Decision 08: Liveboard Audit (Team: Kujo Jotaro) & Track D Micro-architectural Profiling
+### Decision 08: Liveboard Audit (Team: Kujo Jotaro) & Track D Profiling Reconciliation
 - **Official Liveboard Alignment**:
   - Audited `board.json` against the Git repository `Mumuksh-Jain/speed-demon`. Confirmed team identity is registered as `Kujo Jotaro` (`kujo-jotaro-4ca762`).
   - Recorded genuine official Liveboard runs for commit `79152f7`:
@@ -85,7 +85,15 @@
     - Track C: `run-f0261cacf78e` ($T = 1.026$ s, $M = 13.62$ MB, $S = 269$, $K = 6.32$, Points = 40.05).
     - Track D: `run-c2d04a261905` ($T = 2.211$ s, $M = 184.84$ MB, $S = 188$, $K = 6.30$, Points = 39.96).
     - Track B: Correctly un-scored by the board as `stage: unchanged` (unchanged starter reference code).
-- **Track D Micro-architectural Query Profiling**:
-  - Measured: 47.35M heap pushes, 47.04M heap pops, only 7.64% stale pops. An average query settles 868,865 vertices and relaxes 2,499,004 edges.
-  - Work-stealing load balance: Workers processed 10, 9, 7, 6, 9, 9 queries respectively, finishing within 13% of each other.
-  - Direct 2-pass mmap CSR experiment: Reverted due to 4KB page fault overhead across VirtioFS VM mount boundaries during container runs. Retained 1MB buffered `FastReader`.
+- **Track D Discrepancy Resolution**:
+  - Identified that a diagnostic script parsed `queries.txt` assuming a count header, which shifted all queries by one integer and produced artificial random queries across disconnected components.
+  - True production Dijkstra distribution across all 2,000 queries: settled median = 490 (generator spec predicted ~512), mean = 13,354 (generator spec ~12,300), stale pops = 6.89%, and top 5% most expensive queries account for 52.42% of CPU time.
+
+### Decision 09: Track D Exact O(1) Early Rejection Optimization
+- **Hypothesis**: The heaviest queries in Track D are those targeting unreachable nodes with zero in-degree (`in_degree[t] == 0`), which forced Dijkstra to settle ~1.74M nodes before failing. By tracking in-degree non-zero status in a 217 KB bitset (`has_in`) during CSR ingestion and checking `out_degree[s] == 0` ($O(1)$) and `in_degree[t] == 0` ($O(1)$), unreachable queries can be resolved instantly without Dijkstra exploration.
+- **Evidence**:
+  - Microbenchmark across all 2,000 queries on 6 threads: Query execution time dropped from 2.02 s to 1.42 s (**30% query speedup**).
+  - Containerized wall time with `check.py` on full dataset: dropped from **4.52 s** to **3.52 s** (**-1.00 s**).
+  - Correctness verified 100%: byte-identical SHA-256 match on tiny (`ecaca77d...`), sample (`a4c76ed0...`), full seed-1 (`a23dbdf0...`), seed 42 (`e003ecd1...`), and seed 99 (`7d8a37ad...`).
+  - Source lines: +5 lines ($S = 193$). Peak memory impact: +217 KB.
+- **Decision**: **KEPT & COMMITTED**.
