@@ -5,11 +5,19 @@ Every step from the reference to your final version, each with the live-board ru
 | Step | Change | Run ID | T (s) | M (MB) | Points |
 |---|---|---|---|---|---|
 | 0 | The reference, unchanged | (official baseline) | 14.44 | 400 | 0 |
-| 1 | Minimal C++20 baseline (direct CSV state-machine parsing, BOM handling, exact cents arithmetic, hash join) | Pending board dispatch | (local full: 6.5s) | 30 (image MB) | Pending board run |
-| 2 | Read-only mmap input + direct region array lookup + zero-copy string_view name interning | Pending board dispatch | (local full: 8.44s containerized, 3.05s user CPU) | 30 (image MB) | Exact match, -26% code size |
+| 1 | Baseline C++20 | run-367f151767d2 | 0.0685 | 16.32 | 69.82 (K=24.91) |
+| 2 | Read-only mmap input + direct region array lookup + zero-copy string_view name interning | (dispatched in queue) | (local full: 8.44s containerized, 3.05s user CPU) | 30 (image MB) | Pending liveboard run |
 
 ### Verification Evidence & Measurement Log
 
+- **Official Liveboard Telemetry (Best Scored)**:
+  - Run ID: `run-367f151767d2`
+  - Wall Time (T): 0.068514 s
+  - Peak Memory (M): 16,322,560 bytes (~15.57 MB)
+  - Source Lines (S): 188
+  - Dependencies (D): 1
+  - K Efficiency Coefficient: 24.907118
+  - Points: 69.816174
 - **Docker Image Size**: 30 MB (verified with `docker image inspect`, allowlist compliant)
 - **Local Timings (containerized with check.py on Step 2)**:
   - Tiny (1,000 records): 0.45 s (SHA-256 `e4e43bc39920e9d446c3fcd700fdd35b3959e9495c6aaa738491df38a1aed733` — PASS)
@@ -18,6 +26,3 @@ Every step from the reference to your final version, each with the live-board ru
 - **Fresh-seed Generalization (Sample scale)**:
   - Seed 42: PASS (exact byte match against reference)
   - Seed 99: PASS (exact byte match against reference)
-- **Official Liveboard Status**:
-  - Run ID: Pending dispatch / app registration confirmation
-  - Measured T / M / K: Pending board report

@@ -5,11 +5,19 @@ Every step from the reference to your final version, each with the live-board ru
 | Step | Change | Run ID | T (s) | M (MB) | Points |
 |---|---|---|---|---|---|
 | 0 | The reference, unchanged | (official baseline) | 72.69 | 400 | 0 |
-| 1 | Minimal C++20 baseline (fast buffered integer parser, CSR graph, epoch-indexed Dijkstra) | Pending board dispatch | (local full: 9.5s) | 30 (image MB) | 7.6x vs ref |
-| 2 | Parallel 6-worker Dijkstra queries on immutable CSR + sequential ordered emit | Pending board dispatch | (local full: 4.25s) | 30 (image MB) | 17.1x vs ref, 2.25x vs Step 1 |
+| 1 | Baseline C++20 | run-5f639445f7fb | 0.3696 | 88.33 | 62.29 (K=17.61) |
+| 2 | Parallel 6-worker Dijkstra queries on immutable CSR + sequential ordered emit | (dispatched in queue) | (local full: 4.25s) | 30 (image MB) | 2.25x local speedup |
 
 ### Verification Evidence & Measurement Log
 
+- **Official Liveboard Telemetry (Best Scored)**:
+  - Run ID: `run-5f639445f7fb`
+  - Wall Time (T): 0.369555 s
+  - Peak Memory (M): 88,334,336 bytes (~84.24 MB)
+  - Source Lines (S): 206
+  - Dependencies (D): 1
+  - K Efficiency Coefficient: 17.610922
+  - Points: 62.289105
 - **Docker Image Size**: 30 MB (verified with `docker image inspect`, allowlist compliant)
 - **Local Timings (containerized with check.py on Step 2)**:
   - Tiny (40 queries): 0.35 s (SHA-256 `ecaca77d3221fe3928109da36480cfdb39f288f2e57ecbc61d3d7706d5cb4bd5` — PASS)
@@ -18,6 +26,3 @@ Every step from the reference to your final version, each with the live-board ru
 - **Fresh-seed Generalization (Sample scale)**:
   - Seed 42: PASS (exact byte match against reference)
   - Seed 99: PASS (exact byte match against reference)
-- **Official Liveboard Status**:
-  - Run ID: Pending dispatch / app registration confirmation
-  - Measured T / M / K: Pending board report
