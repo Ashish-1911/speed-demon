@@ -76,3 +76,16 @@
 - **Compiler Optimization (Tracks A, C, D)**:
   - *Evaluation*: Evaluated `-flto` and PGO. `-flto -O3` in GCC 15 yielded a ~28% user CPU speedup on Track A (0.558 s down to 0.402 s), while compiling in 1.1s - 1.3s offline. Added `-flto` across all three tracks' Dockerfiles.
   - *Decision*: **KEPT**.
+
+### Decision 08: Liveboard Audit (Team: Kujo Jotaro) & Track D Micro-architectural Profiling
+- **Official Liveboard Alignment**:
+  - Audited `board.json` against the Git repository `Mumuksh-Jain/speed-demon`. Confirmed team identity is registered as `Kujo Jotaro` (`kujo-jotaro-4ca762`).
+  - Recorded genuine official Liveboard runs for commit `79152f7`:
+    - Track A: `run-3c32c728ec43` ($T = 0.486$ s, $M = 35.51$ MB, $S = 175$, $K = 9.93$, Points = 49.84).
+    - Track C: `run-f0261cacf78e` ($T = 1.026$ s, $M = 13.62$ MB, $S = 269$, $K = 6.32$, Points = 40.05).
+    - Track D: `run-c2d04a261905` ($T = 2.211$ s, $M = 184.84$ MB, $S = 188$, $K = 6.30$, Points = 39.96).
+    - Track B: Correctly un-scored by the board as `stage: unchanged` (unchanged starter reference code).
+- **Track D Micro-architectural Query Profiling**:
+  - Measured: 47.35M heap pushes, 47.04M heap pops, only 7.64% stale pops. An average query settles 868,865 vertices and relaxes 2,499,004 edges.
+  - Work-stealing load balance: Workers processed 10, 9, 7, 6, 9, 9 queries respectively, finishing within 13% of each other.
+  - Direct 2-pass mmap CSR experiment: Reverted due to 4KB page fault overhead across VirtioFS VM mount boundaries during container runs. Retained 1MB buffered `FastReader`.
