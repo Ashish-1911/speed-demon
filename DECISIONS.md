@@ -138,3 +138,22 @@
   - ThreadSanitizer audit: 0 data races, clean thread lifecycle and partition boundary alignment.
   - Correctness verified 100%: exact SHA-256 match on tiny (`c24fa507...`), sample (`ca6311bb...`), full seed-1 (`495ca096...`), seed 42 (`835c3637...`), and seed 99 (`859a0eef...`).
 - **Decision**: **KEPT & COMMITTED**.
+
+### Decision 12: Track C Quote-Aware Parallel Ingestion & 512-Partition Flat Hash Dictionary
+- **Context**: Profiling Track C revealed that 65% of execution time was spent in `std::unordered_map` node allocations for 100,520 distinct names, 30% in sequential CSV parsing across 3.32M records, and 5% in string allocations during `regions.csv` ingestion. Over 10% of newlines in `records.csv` are embedded inside quoted fields, making naive newline chunking invalid.
+- **Architecture**:
+  - Quote-aware chunk partitioning: Mathematical proof that unescaped quote parity equals total quote count mod 2 (since escaped quotes `""` add 2 to the quote count, preserving parity). Implemented an unrolled 128-byte AVX2 vector quote counter scanning 202 MB in 6 ms bare metal / 26 ms WSL, locating exact non-quoted newline boundaries for $N$ worker threads.
+  - O(1) region code table: Replaced string map with 3-letter ASCII index table `uint16_t[17576]` ($26 \times 26 \times 26$), dropping `regions.csv` parse time from 184 ms to 6 ms.
+  - 512-partition open-addressing flat hash dictionary: Cache-line-aligned 64-byte slots with atomic spinlocks. Zero heap allocations. Total RAM footprint across all partitions is only 33.5 MB (preserving the low memory penalty factor $M^{0.1}$).
+  - SIMD quote scanning and zero-copy string views: Fast `memchr` vector scanning for note and name fields.
+- **Evidence**:
+  - Local process runtime dropped from 1.45 s (single-threaded) to 0.23 s (12 threads) in WSL; container wall time dropped significantly.
+  - Docker image: 30 MB (allowlist compliant, multi-stage GCC 15 -> Debian 13-slim).
+  - Exact SHA-256 byte-for-byte verification across all datasets:
+    - Tiny: `e4e43bc39920e9d446c3fcd700fdd35b3959e9495c6aaa738491df38a1aed733` (PASS)
+    - Sample: `9035fed36823232dd41ae2d1b9d6d21aa7c73f49d8e95647e953a89d5ebe9a66` (PASS)
+    - Full: `d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536` (PASS)
+    - Fresh Seed 42: `0b2db0295de7e26e2b9547f1ce823087b8b6a1988ec5353e2ad44b6416c3f690` (PASS)
+    - Fresh Seed 99: `32e1f5ee7553477a289c846129bc0356bafdb0904502e13b418f114d110d680c` (PASS)
+  - Official `check.py` PASS: `aggregates.txt sha256 d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536`.
+- **Decision**: **KEPT & COMMITTED**.
