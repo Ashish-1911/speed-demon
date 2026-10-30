@@ -55,3 +55,10 @@
   - Full dataset (2,000 queries): SHA-256 `a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e` (PASS in 9.56s vs 72.69s reference)
   - Fresh Seed 42: SHA-256 `e003ecd1553a9010cca836975f759aa8588403070e83ed359cc3fd991a2275a6` (PASS)
   - Fresh Seed 99: SHA-256 `7d8a37adcc1fdb2bd8668d47513e42ad8f4459d363553cba96a2cd32994bf9cb` (PASS)
+
+### Decision 05: Track A Optimization — Endpoint Interning & Buffered Ingestion
+- **Hypothesis**: Replacing `std::getline` and 3.1M Red-Black Tree node traversals in `std::map` with a 1MB buffered reader, endpoint string interning into `uint16_t` IDs, and a 2D dense `table[hour_id][ep_id]` with a single final sort will drastically eliminate allocation overhead and improve execution time by >3x without altering output.
+- **Result**:
+  - Container wall time on full 3.1M lines decreased from **25.25s** to **5.26s** (a **4.8x local container speedup**).
+  - Exact SHA-256 verified on Tiny, Sample, Full (`495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3`), and fresh seeds.
+  - Decision: **KEPT**.
