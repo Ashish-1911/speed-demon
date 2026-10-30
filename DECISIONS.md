@@ -107,7 +107,12 @@
   - Rarest-anchor candidate filtering for phrase queries, verifying only candidate document text slices.
   - Dynamic lock-free multi-threaded query answering across 6 worker threads.
 - **Evidence**:
-  - Local process runtime: **4.67 s** (vs Python reference 56.35 s on scoring machine).
+  - Official Liveboard Run: `run-ef90581e290a` (Commit `543d1be6a6d9fab017e898e6a0ebcea2972530a0`).
+  - Wall Time (T): **1.438019 s** (39x speedup over 56.35 s reference).
+  - Peak Memory (M): **258,252,800 bytes** (~246.29 MB).
+  - Source Lines (S): **540**, Dependencies (D): **1**.
+  - K Efficiency Coefficient: **7.356055**, Machine Points: **43.332248**.
+  - Championship Impact: Directly replaces Track C (42.367 pts) in the best-3 geometric mean, increasing team overall machine score to **45.431 points**.
   - Full scale SHA-256 match: `f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927` (100% PASS).
   - Multi-scale and fresh seeds: Tiny (`dcdad7ce...`), Sample (`eeeec1e9...`), Seed 42 (`8afc643b...`), Seed 99 (`e603e9f9...`) all pass.
   - Offline Docker build passes with allowlisted GCC 15 and Debian 13-slim (30 MB image, zero dependencies).

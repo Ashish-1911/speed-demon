@@ -5,11 +5,19 @@ Every step from the reference to your final version, each with the live-board ru
 | Step | Change | Run ID | T (s) | M (MB) | Points |
 |---|---|---|---|---|---|
 | 0 | The reference, unchanged | (official baseline) | 56.35 | 2290 | 0 |
-| 1 | Baseline C++20 (query-first flat hash table + 6-worker parallel index & query eval) | (pending board run) | ~1.50 (est. board) | ~320.0 | ~48.0 (K~9.0) |
+| 1 | Baseline C++20 (query-first flat hash table + 6-worker parallel index & query eval) | run-ef90581e290a | 1.4380 | 246.29 | 43.33 (K=7.36) |
 
 ### Verification Evidence & Measurement Log
 
-- **Step 1 Optimization (C++20 Selective Indexing & Parallel Processing)**:
+- **Official Liveboard Telemetry (Team: Kujo Jotaro, Commit 543d1be)**:
+  - Run ID: `run-ef90581e290a`
+  - Commit: `543d1be6a6d9fab017e898e6a0ebcea2972530a0`
+  - Wall Time (T): 1.438019 s (vs 56.35 s reference: 39x speedup)
+  - Peak Memory (M): 258,252,800 bytes (~246.29 MB)
+  - Source Lines (S): 540
+  - Dependencies (D): 1
+  - K Efficiency Coefficient: 7.356055
+  - Points: 43.332248
   - Query-first dictionary: 75,747 distinct query terms extracted and indexed in 0.058 s.
   - Multi-threaded document scanning: 250,000 documents (36.27M tokens) scanned and indexed in 3.91 s across 6 threads using open-addressing dictionary lookups.
   - Multi-threaded query evaluation: 50,000 queries (31,000 BOOL + 19,000 PHRASE) evaluated with exact candidate verification in 0.75 s across 6 threads.
