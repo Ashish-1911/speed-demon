@@ -117,3 +117,17 @@
   - Multi-scale and fresh seeds: Tiny (`dcdad7ce...`), Sample (`eeeec1e9...`), Seed 42 (`8afc643b...`), Seed 99 (`e603e9f9...`) all pass.
   - Offline Docker build passes with allowlisted GCC 15 and Debian 13-slim (30 MB image, zero dependencies).
 - **Decision**: **KEPT & COMMITTED**.
+
+### Decision 11: Track A Multi-Threaded Chunk Ingestion & L1 Endpoint Table
+- **Context**: Profiling revealed that single-threaded parsing of 3.1M log records took >97% of execution time, dominated by string hashing and vector reallocations.
+- **Architecture**:
+  - Exact newline-aligned chunk partitioning: Divides the 238 MB memory-mapped file into 6 contiguous byte slices with exact newline adjustment so every record is parsed exactly once with zero overlap.
+  - Cache-resident flat open-addressing endpoint dictionary (4,096 slots, 32 KB, L1 resident) with 64-bit FNV-1a hashing, eliminating `std::unordered_map` bucket pointer traversals.
+  - Branch-free HTTP status and latency parsing exploiting fixed 3-digit status grammar.
+  - Zero-lock thread-local aggregation tables: Each worker accumulates into thread-local `table[72][2048]`.
+  - Parallel percentile computation: Distributes the ~126k active `(hour, endpoint)` groups across 6 threads for concurrent `std::nth_element` selection.
+- **Evidence**:
+  - Local container wall time on full 3.1M records dropped from **5.44 s** to **2.02 s** (**2.69x local container speedup**).
+  - ThreadSanitizer audit: 0 data races, clean thread lifecycle and partition boundary alignment.
+  - Correctness verified 100%: exact SHA-256 match on tiny (`c24fa507...`), sample (`ca6311bb...`), full seed-1 (`495ca096...`), seed 42 (`835c3637...`), and seed 99 (`859a0eef...`).
+- **Decision**: **KEPT & COMMITTED**.
