@@ -1,2 +1,8 @@
 .out/
 data/
+.data/
+official/
+SPEED_DEMON_FROZEN_20261029_ANTIGRAVITY_HANDOFF/
+*.zip
+build/
+bin/
