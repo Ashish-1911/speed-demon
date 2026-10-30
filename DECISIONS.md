@@ -97,3 +97,18 @@
   - Correctness verified 100%: byte-identical SHA-256 match on tiny (`ecaca77d...`), sample (`a4c76ed0...`), full seed-1 (`a23dbdf0...`), seed 42 (`e003ecd1...`), and seed 99 (`7d8a37ad...`).
   - Source lines: +5 lines ($S = 193$). Peak memory impact: +217 KB.
 - **Decision**: **KEPT & COMMITTED**.
+
+### Decision 10: Track B (Index) C++20 Full Implementation
+- **Context**: Track B was previously an un-scored Python starter reference. Developing a high-performance Track B provides a 4th scored track, directly targeting replacing Track C (42.37 pts) in the championship best-3 geometric mean.
+- **Architecture**:
+  - Query-first term extraction: All 50,000 queries are parsed upfront, mapping ~75,747 query terms into a flat open-addressing hash table with 64-bit FNV-1a hashing. Over 90% of non-query corpus tokens are rejected with average 1.1 cache-line probes without allocations.
+  - Multi-threaded document chunk indexing: 250,000 documents are indexed in parallel across 6 worker threads, and thread-local ascending postings are concatenated into globally sorted ascending vectors without sorting.
+  - Linear-time two-pointer streaming merges for left-to-right Boolean evaluation (`AND`, `OR`, `NOT`).
+  - Rarest-anchor candidate filtering for phrase queries, verifying only candidate document text slices.
+  - Dynamic lock-free multi-threaded query answering across 6 worker threads.
+- **Evidence**:
+  - Local process runtime: **4.67 s** (vs Python reference 56.35 s on scoring machine).
+  - Full scale SHA-256 match: `f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927` (100% PASS).
+  - Multi-scale and fresh seeds: Tiny (`dcdad7ce...`), Sample (`eeeec1e9...`), Seed 42 (`8afc643b...`), Seed 99 (`e603e9f9...`) all pass.
+  - Offline Docker build passes with allowlisted GCC 15 and Debian 13-slim (30 MB image, zero dependencies).
+- **Decision**: **KEPT & COMMITTED**.
