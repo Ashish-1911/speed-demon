@@ -127,6 +127,13 @@
   - Zero-lock thread-local aggregation tables: Each worker accumulates into thread-local `table[72][2048]`.
   - Parallel percentile computation: Distributes the ~126k active `(hour, endpoint)` groups across 6 threads for concurrent `std::nth_element` selection.
 - **Evidence**:
+  - Official Liveboard Run: `run-8247401a3a6e` (Commit `955b47396a7e0b1fa2bc4da0bec326059b113d29`).
+  - Wall Time (T): **0.145251 s** (3.32x speedup over 0.4824 s baseline).
+  - Peak Memory (M): **80,949,248 bytes** (~80.95 MB).
+  - Source Lines (S): **327**, Dependencies (D): **1**.
+  - K Efficiency Coefficient: **14.022327** (up from 9.968207: +4.05 jump).
+  - Machine Points: **57.341005** (up from 49.930853: +7.41 points on Track A).
+  - Championship Impact: Lifts team best-3 geometric mean machine score to **47.700 points**, advancing team ranking to Rank 35.
   - Local container wall time on full 3.1M records dropped from **5.44 s** to **2.02 s** (**2.69x local container speedup**).
   - ThreadSanitizer audit: 0 data races, clean thread lifecycle and partition boundary alignment.
   - Correctness verified 100%: exact SHA-256 match on tiny (`c24fa507...`), sample (`ca6311bb...`), full seed-1 (`495ca096...`), seed 42 (`835c3637...`), and seed 99 (`859a0eef...`).
