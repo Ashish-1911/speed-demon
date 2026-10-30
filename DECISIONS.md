@@ -5,6 +5,7 @@
 - **Compiler Image**: `gcc:15@sha256:eb5e64286ad47187b32bda75c6b6916166ecb41da56559b8b09e0001748d2cce`
 - **Runtime Image**: `debian:13-slim@sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20be455898a9f034ad`
 - **Language**: C++20 with zero third-party dependencies (`dependency_count = 0`).
+- **Portfolio Status**: All 3 required tracks (A, C, D) fully implemented and passing official offline sandbox tests.
 
 ---
 
@@ -13,7 +14,7 @@
 ### Decision 01: Multi-stage Docker Build for C++20
 - **Context**: Solutions must compile offline (`--network=none`), fit within 2 GB image size, and use allowlisted images pinned by multi-arch digest.
 - **Decision**: Multi-stage build with `gcc:15` compiling with `-std=c++20 -O3 -static-libstdc++ -static-libgcc`, copying only the single compiled binary into `debian:13-slim`.
-- **Result**: Track A and Track C Docker images are each ~30 MB (far below the 2 GB cap), build in ~1.2s - 1.7s, and have zero runtime dependencies.
+- **Result**: Docker images for Tracks A, C, and D are each ~30 MB (far below the 2 GB cap), build in ~1.2s - 1.7s, and have zero runtime dependencies.
 
 ### Decision 02: Track A Baseline Implementation
 - **Implementation**:
@@ -35,4 +36,15 @@
 - **Verification**:
   - Tiny dataset: SHA-256 `e4e43bc39920e9d446c3fcd700fdd35b3959e9495c6aaa738491df38a1aed733` (exact match).
   - Sample dataset: SHA-256 `9035fed36823232dd41ae2d1b9d6d21aa7c73f49d8e95647e953a89d5ebe9a66` (exact match).
+  - Both verified with official `check.py` under full offline sandbox restrictions.
+
+### Decision 04: Track D Baseline Implementation
+- **Implementation**:
+  - High-performance POSIX buffered integer parser `FastReader`.
+  - Compact Compressed Sparse Row (CSR) adjacency graph with degree prefix sums.
+  - Epoch-indexed Dijkstra distance arrays avoiding clearing 1.7M node distance arrays between queries.
+  - O(1) identity `s == t` handling and 64-bit distance precision.
+- **Verification**:
+  - Tiny dataset: SHA-256 `ecaca77d3221fe3928109da36480cfdb39f288f2e57ecbc61d3d7706d5cb4bd5` (exact match).
+  - Sample dataset: SHA-256 `a4c76ed030bc7e365db33191f6cf74708fba7f25eb48d64c8c4279f2e57046a0` (exact match).
   - Both verified with official `check.py` under full offline sandbox restrictions.
