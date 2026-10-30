@@ -62,3 +62,19 @@
   - Container wall time on full 3.1M lines decreased from **25.25s** to **5.26s** (a **4.8x local container speedup**).
   - Exact SHA-256 verified on Tiny, Sample, Full (`495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3`), and fresh seeds.
   - Decision: **KEPT**.
+
+### Decision 06: Application and Verification of Experimental Optimization Suite (Tracks A, C, D)
+- **Track A (Ingest)**:
+  - Implemented read-only memory-mapping (`mmap`), zero-copy `std::string_view` endpoint interning, direct 72h window index calculation, and partial selection (`std::nth_element`) for p50/p95/p99 percentiles.
+  - Containerized full run: **4.38 s** (down from 5.26 s), user CPU 0.56 s. Exact SHA-256 verified across tiny, sample, full, seed 42, and seed 99.
+  - Code size reduced by 30% (209 -> 145 lines).
+  - Decision: **KEPT**.
+- **Track C (Join)**:
+  - Implemented memory-mapped `records.csv`, direct flat array lookup for region IDs (hardened with dynamic bounds resizing and CRLF stripping for `regions.csv`), and zero-copy `std::string_view` raw field name hashing with exact decoded byte lengths.
+  - Full containerized time: **8.44 s**, process user CPU **3.05 s** (down from 3.50 s). Exact SHA-256 verified across tiny, sample, full, seed 42, and seed 99.
+  - Code size reduced by 26% (284 -> 209 lines).
+  - Decision: **KEPT**.
+- **Track D (Traverse)**:
+  - Multi-threaded query execution using 6 worker threads (matching the 6 physical cores in the competition sandbox) with atomic task dispatching, private Dijkstra queues/arrays, and sequential output assembly.
+  - Containerized full run: **4.25 s** (down from 9.56 s, a **2.25x speedup**; process real time 4.60 s vs 10.48 s). Exact SHA-256 verified across tiny, sample, full, seed 42, and seed 99.
+  - Decision: **KEPT**.

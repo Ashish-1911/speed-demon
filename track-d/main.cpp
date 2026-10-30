@@ -2,6 +2,9 @@
 #include <fstream>
 #include <vector>
 #include <queue>
+#include <thread>
+#include <atomic>
+#include <algorithm>
 #include <string>
 #include <filesystem>
 #include <cstdint>
@@ -133,60 +136,55 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::vector<uint64_t> dist(n, UINT64_MAX);
-    std::vector<uint32_t> seen_epoch(n, 0);
-    uint32_t current_epoch = 0;
-
+    // Each worker has private Dijkstra state; queries share immutable CSR.
+    // Results are written in input order after all workers join.
     using PQElement = std::pair<uint64_t, uint32_t>;
-    std::priority_queue<PQElement, std::vector<PQElement>, std::greater<PQElement>> pq;
-
-    for (const auto& [s, t] : queries) {
-        if (s == t) {
-            out << "0\n";
-            continue;
-        }
-
-        current_epoch++;
-        if (current_epoch == 0) {
-            // In case of 32-bit overflow (after 4 billion queries, unlikely)
-            std::fill(seen_epoch.begin(), seen_epoch.end(), 0);
-            current_epoch = 1;
-        }
-
-        dist[s] = 0;
-        seen_epoch[s] = current_epoch;
-        
-        while (!pq.empty()) pq.pop();
-        pq.push({0, s});
-
-        int64_t answer = -1;
-
-        while (!pq.empty()) {
-            auto [d, u] = pq.top();
-            pq.pop();
-
-            if (d > dist[u]) continue;
-            if (u == t) {
-                answer = static_cast<int64_t>(d);
-                break;
+    using PQ = std::priority_queue<PQElement, std::vector<PQElement>, std::greater<PQElement>>;
+    std::vector<int64_t> results(queries.size(), -1);
+    std::atomic<size_t> next_query{0};
+    auto worker = [&]() {
+        std::vector<uint64_t> dist(n, UINT64_MAX);
+        std::vector<uint32_t> seen_epoch(n, 0);
+        uint32_t current_epoch = 0;
+        PQ pq;
+        while (true) {
+            size_t idx = next_query.fetch_add(1, std::memory_order_relaxed);
+            if (idx >= queries.size()) return;
+            auto [s,t] = queries[idx];
+            if (s == t) { results[idx] = 0; continue; }
+            if (++current_epoch == 0) {
+                std::fill(seen_epoch.begin(),seen_epoch.end(),0);
+                current_epoch = 1;
             }
-
-            uint32_t start_e = head[u];
-            uint32_t end_e = head[u + 1];
-            for (uint32_t e = start_e; e < end_e; ++e) {
-                uint32_t v = edges[e].v;
-                uint64_t nd = d + edges[e].w;
-
-                if (seen_epoch[v] != current_epoch || nd < dist[v]) {
-                    dist[v] = nd;
-                    seen_epoch[v] = current_epoch;
-                    pq.push({nd, v});
+            dist[s] = 0;
+            seen_epoch[s] = current_epoch;
+            pq = PQ(); // Discard potentially unvisited queue entries from previous query.
+            pq.push({0, s});
+            int64_t answer = -1;
+            while (!pq.empty()) {
+                auto [d,u] = pq.top();
+                pq.pop();
+                if (seen_epoch[u] != current_epoch || d != dist[u]) continue;
+                if (u == t) { answer = static_cast<int64_t>(d); break; }
+                for(uint32_t e=head[u]; e<head[u+1]; ++e) {
+                    uint32_t v = edges[e].v;
+                    uint64_t nd = d + uint64_t(edges[e].w);
+                    if(seen_epoch[v] != current_epoch || nd < dist[v]) {
+                        dist[v] = nd;
+                        seen_epoch[v] = current_epoch;
+                        pq.push({nd,v});
+                    }
                 }
             }
+            results[idx] = answer;
         }
-
-        out << answer << "\n";
-    }
-
-    return 0;
+    };
+    constexpr size_t max_workers = 6; // Six physical P-cores in the scoring sandbox.
+    size_t workers = std::min(max_workers, queries.size());
+    std::vector<std::thread> threads;
+    threads.reserve(workers);
+    for(size_t i=0; i<workers; ++i) threads.emplace_back(worker);
+    for(auto& th: threads) th.join();
+    for(auto answer:results) out << answer << '\n';
+    return out.good() ? 0 : 1;
 }
