@@ -50,6 +50,14 @@ static inline uint32_t fast_u32(const char*& p, const char* end) {
     return x;
 }
 
+static inline uint32_t parse_u32_fast(const char*& p) {
+    uint32_t x = *p++ - '0';
+    while (*p >= '0' && *p <= '9') {
+        x = x * 10 + (*p++ - '0');
+    }
+    return x;
+}
+
 struct Edge {
     uint32_t v;
     uint32_t w;
@@ -136,6 +144,8 @@ int main(int argc, char* argv[]) {
 
     uint32_t n = fast_u32(gp, gend);
     uint32_t m = fast_u32(gp, gend);
+    while (gp < gend && *gp != '\n') ++gp;
+    if (gp < gend) ++gp;
 
     int parse_workers = std::min(num_workers, int(std::max(1u, m / 1000u)));
     if (parse_workers <= 0) parse_workers = 1;
@@ -151,7 +161,7 @@ int main(int argc, char* argv[]) {
     }
     chunk_ptrs[parse_workers] = gend;
 
-    // Pass 1: Count per-worker degree prefix slices
+    // Pass 1: Count per-worker degree prefix slices with fast parsing and skipping of w
     std::vector<std::vector<uint32_t>> worker_counts_f(parse_workers, std::vector<uint32_t>(n + 1, 0));
     std::vector<std::vector<uint32_t>> worker_counts_r(parse_workers, std::vector<uint32_t>(n + 1, 0));
 
@@ -165,9 +175,11 @@ int main(int argc, char* argv[]) {
             while (p < end) {
                 while (p < end && *p <= ' ') ++p;
                 if (p >= end) break;
-                uint32_t u = fast_u32(p, end);
-                uint32_t v = fast_u32(p, end);
-                fast_u32(p, end); // skip w
+                uint32_t u = parse_u32_fast(p);
+                while (*p <= ' ') ++p;
+                uint32_t v = parse_u32_fast(p);
+                while (p < end && *p != '\n') ++p;
+                if (p < end) ++p;
                 cf[u + 1]++;
                 cr[v + 1]++;
             }
@@ -219,9 +231,13 @@ int main(int argc, char* argv[]) {
             while (p < end) {
                 while (p < end && *p <= ' ') ++p;
                 if (p >= end) break;
-                uint32_t u = fast_u32(p, end);
-                uint32_t v = fast_u32(p, end);
-                uint32_t w = fast_u32(p, end);
+                uint32_t u = parse_u32_fast(p);
+                while (*p <= ' ') ++p;
+                uint32_t v = parse_u32_fast(p);
+                while (*p <= ' ') ++p;
+                uint32_t w = parse_u32_fast(p);
+                while (p < end && *p != '\n') ++p;
+                if (p < end) ++p;
                 edges[off_f[u]++] = {v, w};
                 r_edges[off_r[v]++] = {u, w};
             }
