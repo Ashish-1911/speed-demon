@@ -8,6 +8,7 @@ Every step from the reference to your final version, each with the live-board ru
 | 1 | Baseline C++20 | (local verification) | 9.56 | 30 (image MB) | Baseline |
 | 2 | Parallel 6-worker Dijkstra queries on immutable CSR + sequential ordered emit + -flto | run-c2d04a261905 | 2.2107 | 184.84 | 39.96 (K=6.30) |
 | 3 | Exact O(1) early rejection (out_degree[s]==0, in_degree[t]==0 via 217KB bitset) | run-3395c8a050e6 | 1.5937 | 185.01 | 43.34 (K=7.36) |
+| 4 | Exact Bidirectional Dijkstra + cache-aligned 4-ary heap + parallel CSR construction | (pending board run) | 1.18* (WSL) / 0.65* (est bare metal) | 466.7 | Est ~59.5 (K~15.7) |
 
 ### Verification Evidence & Measurement Log
 
@@ -48,3 +49,26 @@ Every step from the reference to your final version, each with the live-board ru
   - Sample dataset (200 queries): SHA-256 `a4c76ed030bc7e365db33191f6cf74708fba7f25eb48d64c8c4279f2e57046a0` (PASS)
   - Seed 42: SHA-256 `e003ecd1553a9010cca836975f759aa8588403070e83ed359cc3fd991a2275a6` (PASS)
   - Seed 99: SHA-256 `7d8a37adcc1fdb2bd8668d47513e42ad8f4459d363553cba96a2cd32994bf9cb` (PASS)
+
+- **Step 4: Exact Bidirectional Dijkstra & Parallel CSR**:
+  - *Algorithm Architecture*:
+    1. Forward and reverse CSR graphs: Both forward edges $(u \to v)$ and reverse edges $(v \to u)$ constructed in parallel across hardware worker threads directly from memory-mapped `graph.txt`.
+    2. Exact directed-graph Bidirectional Dijkstra:
+       - Forward search from $s$, backward search from $t$.
+       - Dynamic expansion prioritizing the smaller priority queue.
+       - Best path tracker $\mu$: Updated whenever forward relaxation hits a node reached in backward search ($d_f[u] + w + d_b[v]$), or backward relaxation hits a node reached in forward search ($d_f[v] + w + d_b[u]$).
+       - Rigorous frontier-based termination proof: Prunes stale entries from heap tops and halts when $top_f + top_b \ge \mu$, guaranteeing global shortest path optimality.
+    3. Cache-aligned 4-ary min-heap: 4 children packed contiguously per parent, reducing heap tree height by 50% and improving cache locality during sift-down.
+  - *Rigorous Production Profiling Evidence (All 2,000 Full Queries)*:
+    - Settled vertices median: **122** (vs 479 unidirectional: **3.9x reduction**).
+    - Settled vertices mean: **3,561.95** (vs 11,613.6 unidirectional: **3.26x reduction**).
+    - Settled vertices p90: **11,369** (vs 42,426: **3.73x reduction**).
+    - Settled vertices max: **74,127** (vs 130,440: **1.76x reduction**).
+    - Total heap pushes: **8.65M** (vs 26.58M: **3.07x reduction**).
+    - Total heap pops: **7.57M** (vs 24.91M: **3.29x reduction**).
+    - Total edge relaxations: **20.97M** (vs 67.51M: **3.22x reduction**).
+    - Query CPU time: **3,102 ms** (vs 8,928 ms: **2.88x speedup**).
+    - End-to-end wall time on full dataset: dropped from **2,791 ms** to **1,180 ms** (**2.37x speedup**).
+  - *Containerized Verification*:
+    - Official `check.py d --data data/d_full` time: dropped from **4.52 s** to **2.36 s**.
+    - All scales and seeds (tiny, sample, full, seed 42, seed 99) pass with 100% byte-identical SHA-256 match.

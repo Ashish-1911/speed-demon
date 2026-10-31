@@ -147,6 +147,67 @@
   - 512-partition open-addressing flat hash dictionary: Cache-line-aligned 64-byte slots with atomic spinlocks. Zero heap allocations. Total RAM footprint across all partitions is only 33.5 MB (preserving the low memory penalty factor $M^{0.1}$).
   - SIMD quote scanning and zero-copy string views: Fast `memchr` vector scanning for note and name fields.
 - **Evidence**:
+  - Official Liveboard Run: `run-c120005c0caa` (Commit `f944e44d1d288f3c3a0019a73effb1d7d494f35c`).
+  - Wall Time (T): **0.134218 s** (6.2x speedup over 0.8318 s baseline).
+  - Peak Memory (M): **37,806,080 bytes** (~37.81 MB).
+  - Source Lines (S): **473**, Dependencies (D): **1**.
+  - K Efficiency Coefficient: **13.099285** (up from 7.036: +6.06 jump).
+  - Machine Points: **55.862380** (up from 42.367: +13.50 points on Track C).
+  - Championship Impact: Directly replaces Track B (43.35 pts) in best-3 portfolio, lifting team score.
+  - Full scale SHA-256 match: `d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536` (100% PASS).
+- **Decision**: **KEPT & COMMITTED**.
+
+### Decision 13: Track D Exact Bidirectional Dijkstra & Parallel CSR Construction
+- **Context**: Profiling the complete 2,000 queries of Track D full dataset revealed that queries with >10,000 settled vertices (22% of queries) accounted for 93.19% of total CPU time. Single-direction Dijkstra searches an expanding ball of volume $\propto R^d$, causing massive redundant exploration.
+- **Architecture**:
+  - Exact directed-graph Bidirectional Dijkstra:
+    - Forward search from $s$ on $G$, backward search from $t$ on reverse graph $G^R$.
+    - Dynamic queue selection expanding the smaller frontier.
+    - Global best path length $\mu$ tracked via connecting path edges: updated on forward relaxation if neighbor was reached backward ($d_f[u] + w + d_b[v]$), and on backward relaxation if neighbor was reached forward ($d_f[v] + w + d_b[u]$).
+    - Rigorous frontier termination condition: Pruning stale entries from queue tops and breaking when $top_f + top_b \ge \mu$, proving global shortest-path optimality on non-negative directed graphs.
+  - Cache-aligned 4-ary min-heap: Packs 4 child priorities contiguously, reducing heap height by 50% and cutting cache misses during sift-down.
+  - Parallel memory-mapped graph ingestion: Chunked line-aligned parsing across worker threads, constructing both forward and reverse CSR in parallel.
+- **Evidence**:
+  - Comprehensive 2,000-query profiling:
+    - Median settled vertices: **122** vs **479** (3.9x reduction).
+    - Mean settled vertices: **3,561.95** vs **11,613.6** (3.26x reduction).
+    - Heap pushes: **8.65M** vs **26.58M** (3.07x reduction).
+    - Query CPU time: **3,102 ms** vs **8,928 ms** (2.88x speedup).
+  - End-to-end wall time: dropped from **2,791 ms** to **1,180 ms** (**2.37x speedup**).
+  - Memory: Peak RSS 466 MB (10.3% penalty factor $M^{0.1}$), far outweighed by 2.37x time speedup.
+  - Official `check.py` time: dropped from **4.52 s** to **2.36 s**.
+  - Exact 100% byte-for-byte SHA-256 match across all scales and seeds: Tiny (`ecaca77d...`), Sample (`a4c76ed0...`), Full seed 1 (`a23dbdf0...`), Seed 42 (`e003ecd1...`), Seed 99 (`7d8a37ad...`).
+- **Decision**: **KEPT & COMMITTED**.
+
+### Decision 11: Track A Multi-Threaded Chunk Ingestion & L1 Endpoint Table
+- **Context**: Profiling revealed that single-threaded parsing of 3.1M log records took >97% of execution time, dominated by string hashing and vector reallocations.
+- **Architecture**:
+  - Exact newline-aligned chunk partitioning: Divides the 238 MB memory-mapped file into 6 contiguous byte slices with exact newline adjustment so every record is parsed exactly once with zero overlap.
+  - Cache-resident flat open-addressing endpoint dictionary (4,096 slots, 32 KB, L1 resident) with 64-bit FNV-1a hashing, eliminating `std::unordered_map` bucket pointer traversals.
+  - Branch-free HTTP status and latency parsing exploiting fixed 3-digit status grammar.
+  - Zero-lock thread-local aggregation tables: Each worker accumulates into thread-local `table[72][2048]`.
+  - Parallel percentile computation: Distributes the ~126k active `(hour, endpoint)` groups across 6 threads for concurrent `std::nth_element` selection.
+- **Evidence**:
+  - Official Liveboard Run: `run-8247401a3a6e` (Commit `955b47396a7e0b1fa2bc4da0bec326059b113d29`).
+  - Wall Time (T): **0.145251 s** (3.32x speedup over 0.4824 s baseline).
+  - Peak Memory (M): **80,949,248 bytes** (~80.95 MB).
+  - Source Lines (S): **327**, Dependencies (D): **1**.
+  - K Efficiency Coefficient: **14.022327** (up from 9.968207: +4.05 jump).
+  - Machine Points: **57.341005** (up from 49.930853: +7.41 points on Track A).
+  - Championship Impact: Lifts team best-3 geometric mean machine score to **47.700 points**, advancing team ranking to Rank 35.
+  - Local container wall time on full 3.1M records dropped from **5.44 s** to **2.02 s** (**2.69x local container speedup**).
+  - ThreadSanitizer audit: 0 data races, clean thread lifecycle and partition boundary alignment.
+  - Correctness verified 100%: exact SHA-256 match on tiny (`c24fa507...`), sample (`ca6311bb...`), full seed-1 (`495ca096...`), seed 42 (`835c3637...`), and seed 99 (`859a0eef...`).
+- **Decision**: **KEPT & COMMITTED**.
+
+### Decision 12: Track C Quote-Aware Parallel Ingestion & 512-Partition Flat Hash Dictionary
+- **Context**: Profiling Track C revealed that 65% of execution time was spent in `std::unordered_map` node allocations for 100,520 distinct names, 30% in sequential CSV parsing across 3.32M records, and 5% in string allocations during `regions.csv` ingestion. Over 10% of newlines in `records.csv` are embedded inside quoted fields, making naive newline chunking invalid.
+- **Architecture**:
+  - Quote-aware chunk partitioning: Mathematical proof that unescaped quote parity equals total quote count mod 2 (since escaped quotes `""` add 2 to the quote count, preserving parity). Implemented an unrolled 128-byte AVX2 vector quote counter scanning 202 MB in 6 ms bare metal / 26 ms WSL, locating exact non-quoted newline boundaries for $N$ worker threads.
+  - O(1) region code table: Replaced string map with 3-letter ASCII index table `uint16_t[17576]` ($26 \times 26 \times 26$), dropping `regions.csv` parse time from 184 ms to 6 ms.
+  - 512-partition open-addressing flat hash dictionary: Cache-line-aligned 64-byte slots with atomic spinlocks. Zero heap allocations. Total RAM footprint across all partitions is only 33.5 MB (preserving the low memory penalty factor $M^{0.1}$).
+  - SIMD quote scanning and zero-copy string views: Fast `memchr` vector scanning for note and name fields.
+- **Evidence**:
   - Local process runtime dropped from 1.45 s (single-threaded) to 0.23 s (12 threads) in WSL; container wall time dropped significantly.
   - Docker image: 30 MB (allowlist compliant, multi-stage GCC 15 -> Debian 13-slim).
   - Exact SHA-256 byte-for-byte verification across all datasets:
@@ -156,4 +217,26 @@
     - Fresh Seed 42: `0b2db0295de7e26e2b9547f1ce823087b8b6a1988ec5353e2ad44b6416c3f690` (PASS)
     - Fresh Seed 99: `32e1f5ee7553477a289c846129bc0356bafdb0904502e13b418f114d110d680c` (PASS)
   - Official `check.py` PASS: `aggregates.txt sha256 d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536`.
+- **Decision**: **KEPT & COMMITTED**.
+
+### Decision 13: Track D Exact Bidirectional Dijkstra & Parallel CSR Construction
+- **Context**: Profiling the complete 2,000 queries of Track D full dataset revealed that queries with >10,000 settled vertices (22% of queries) accounted for 93.19% of total CPU time. Single-direction Dijkstra searches an expanding ball of volume $\propto R^d$, causing massive redundant exploration.
+- **Architecture**:
+  - Exact directed-graph Bidirectional Dijkstra:
+    - Forward search from $s$ on $G$, backward search from $t$ on reverse graph $G^R$.
+    - Dynamic queue selection expanding the smaller frontier.
+    - Global best path length $\mu$ tracked via connecting path edges: updated on forward relaxation if neighbor was reached backward ($d_f[u] + w + d_b[v]$), and on backward relaxation if neighbor was reached forward ($d_f[v] + w + d_b[u]$).
+    - Rigorous frontier termination condition: Pruning stale entries from queue tops and breaking when $top_f + top_b \ge \mu$, proving global shortest-path optimality on non-negative directed graphs.
+  - Cache-aligned 4-ary min-heap: Packs 4 child priorities contiguously, reducing heap height by 50% and cutting cache misses during sift-down.
+  - Parallel memory-mapped graph ingestion: Chunked line-aligned parsing across worker threads, constructing both forward and reverse CSR in parallel.
+- **Evidence**:
+  - Comprehensive 2,000-query profiling:
+    - Median settled vertices: **122** vs **479** (3.9x reduction).
+    - Mean settled vertices: **3,561.95** vs **11,613.6** (3.26x reduction).
+    - Heap pushes: **8.65M** vs **26.58M** (3.07x reduction).
+    - Query CPU time: **3,102 ms** vs **8,928 ms** (2.88x speedup).
+  - End-to-end wall time: dropped from **2,791 ms** to **1,180 ms** (**2.37x speedup**).
+  - Memory: Peak RSS 466 MB (10.3% penalty factor $M^{0.1}$), far outweighed by 2.37x time speedup.
+  - Official `check.py` time: dropped from **4.52 s** to **2.36 s**.
+  - Exact 100% byte-for-byte SHA-256 match across all scales and seeds: Tiny (`ecaca77d...`), Sample (`a4c76ed0...`), Full seed 1 (`a23dbdf0...`), Seed 42 (`e003ecd1...`), Seed 99 (`7d8a37ad...`).
 - **Decision**: **KEPT & COMMITTED**.
