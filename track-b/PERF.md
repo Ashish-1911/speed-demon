@@ -6,7 +6,10 @@ Every step from the reference to your final version, each with the live-board ru
 |---|---|---|---|---|---|
 | 0 | The reference, unchanged | (official baseline) | 56.35 | 2290 | 0 |
 | 1 | Baseline C++20 (query-first flat hash table + 6-worker parallel index & query eval) | run-ef90581e290a | 1.4380 | 246.29 | 43.33 (K=7.36) |
-| 2 | Single-pass parallel slice+index + Flat CSR Postings + zero-alloc ping-pong query eval + block I/O | run-f62da38c68b6 | 1.2213 | 242.11 | 44.63 (K=7.81) |
+| 2 | Single-pass parallel slice+index + Flat CSR Postings + zero-alloc ping-pong query eval + block I/O | run-09cb3c3ba99e | 1.0952 | 242.00 | 45.81 (K=8.25) |
+| 3 | Document-Centric Batch Phrase Verification (radix-bucketed doc-centric tokenization + batch phrase eval) | (pending) | 0.824* | 242.00* | ~48.9* |
+
+\* *Projected from local 24.7% wall-time reduction on full scale (740.26 ms vs 982.65 ms baseline); pending official liveboard run.*
 
 ### Verification Evidence & Measurement Log
 
@@ -33,30 +36,34 @@ Every step from the reference to your final version, each with the live-board ru
   - Fresh Seed 99 (Sample scale): SHA-256 `e603e9f94513c4ed0ada769340818f72a78331f6fbf38c7ed01c903930a002c2` (PASS)
 
 - **Step 2: Single-Pass Parallel Ingestion, Flat CSR Postings & Zero-Alloc Query Evaluation**:
-  - *Official Liveboard Telemetry (Team: Kujo Jotaro, Commit 1e6346d)*:
-    - Run ID: `run-f62da38c68b6`
-    - Commit: `1e6346d2cb787097fdc6e4ce5bd253958f0fdc9d`
-    - Wall Time (T): **1.221298 s** (vs 1.428689 s on Step 1: **17.0% bare-metal speedup**)
-    - Peak Memory (M): **253,870,080 bytes** (~242.11 MB, down from 246.29 MB)
-    - Source Lines (S): **640**
+  - *Official Liveboard Telemetry (Team: Kujo Jotaro, Commit 1383809)*:
+    - Run ID: `run-09cb3c3ba99e`
+    - Commit: `1383809ed991a0aa0b98ebfe58a2d1f05e466e06`
+    - Wall Time (T): **1.095222 s**
+    - Peak Memory (M): **253,755,392 bytes** (~242.00 MB)
+    - Source Lines (S): **661**
     - Dependencies (D): **1**
-    - K Efficiency Coefficient: **7.807918** (up from 7.380316: +0.43 jump)
-    - Points: **44.626761** (up from 43.403748: +1.22 points on Track B)
+    - K Efficiency Coefficient: **8.245800**
+    - Points: **45.811641**
     - All gates passed: `check`, `build`, `correctness`, `timeout`, `sandbox` (100% OK)
-  - *Bottleneck Decomposition & System Optimizations*:
-    1. Single-pass chunked doc slicing + tokenization: Combined separate scanning passes over 253 MB `docs.txt` into one single parallel pass across 6 threads. Document text is tokenized while hot in L1/L2 cache.
-    2. 256-byte branch-free ASCII lookup tables: Replaced multi-branch `isalpha`/`isdigit`/`tolower` loops with 64-byte aligned L1-resident `IS_ALNUM` and `TO_LOWER_MAP` tables.
-    3. Flat Compressed Sparse Row (CSR) Postings: Eliminated 75,747 fragmented `std::vector` heap allocations, merging into a single contiguous 84.8 MB buffer indexed by `csr_head[tid]`.
-    4. Zero-allocation ping-pong query evaluation: Replaced dynamic vector allocations inside `and_op`, `or_op`, `not_op` with thread-local preallocated ping-pong buffers (`bufA`, `bufB`).
-    5. Term-frequency ordered phrase intersections: Intersect rarest phrase terms first to minimize candidate set size.
-    6. Fast integer serialization & single block I/O: Replaced 50,000 separate `out.write()` calls with formatted memory buffer and single POSIX `write()` (reduced output write time from 241 ms to 14 ms).
+
+- **Step 3: Document-Centric Batch Phrase Verification**:
+  - *Engineering Hypothesis & Investigation*:
+    - In Step 2, each phrase query independently tokenized candidate documents. Deep profiling revealed 214,226 total candidate pairs across 110,702 distinct documents (1.935 scans/doc avg, up to 19 scans), causing 417 MB of document text rescans vs 157 MB unique text (2.65x redundant rescans). Document tokenization accounted for 88.42% of phrase evaluation CPU cycles.
+  - *Architecture & Implementation*:
+    1. Boolean queries are evaluated directly across 12 parallel workers.
+    2. Phrase queries perform rapid inverted-index candidate pruning, emitting `(doc_id, query_idx)` pairs into thread-local buffers.
+    3. Candidate pairs are merged and sorted by `doc_id` using a high-speed linear-time counting/radix bucket pass (2.5 ms for all 214,226 pairs).
+    4. Parallel workers partition the unique candidate documents. Each candidate document is tokenized **exactly once** (51.8 ms total tokenization time, down from 270 ms).
+    5. All pending phrase queries for that document are evaluated concurrently against the single token sequence.
+    6. Matches are merged, sorted, aggregated, and formatted into output buffers.
   - *Measured Performance*:
-    - WSL process runtime: Dropped from **10,073 ms to 1,485 ms** (**6.78x local process speedup**).
-    - Local Docker container check on full scale: Dropped from **4.66 s to 2.66 s** (**1.75x container speedup**).
-    - Source lines: 661 lines. Dependencies: 0. Docker image: 30 MB.
-    - Correctness: 100% byte-exact SHA-256 match across tiny, sample, full, seed 42, and seed 99.
+    - Local benchmark on `data/b_full` (10-run median): **740.26 ms** vs baseline **982.65 ms** (**242.39 ms wall-time reduction = 24.7% faster**).
+    - Multi-scale correctness: 100% byte-exact SHA-256 match across tiny, sample, full, seed 42, and seed 99.
+    - Local Docker container check (`check.py` on full scale): **1.94 s** total execution (including container start-up).
+    - Source lines: 724 lines. Dependencies: 0. Docker image: 31 MB.
 
 - **Docker Image & Compliance**:
   - Pinned GCC 15 multi-stage build $\to$ Debian 13-slim (`allowlist.json` compliant)
-  - Image size: 30 MB (cap is 2 GB)
+  - Image size: 31 MB (cap is 2 GB)
   - Dependencies: 0
