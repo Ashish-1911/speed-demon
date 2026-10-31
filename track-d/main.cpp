@@ -1,4 +1,4 @@
-// Speed Demon 2026 Track D — High-performance bidirectional Dijkstra with parallel CSR
+// Speed Demon 2026 Track D — High-performance bidirectional Dijkstra with zero-temp parallel CSR
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -51,12 +51,6 @@ static inline uint32_t fast_u32(const char*& p, const char* end) {
 }
 
 struct Edge {
-    uint32_t v;
-    uint32_t w;
-};
-
-struct RawEdge {
-    uint32_t u;
     uint32_t v;
     uint32_t w;
 };
@@ -143,76 +137,99 @@ int main(int argc, char* argv[]) {
     uint32_t n = fast_u32(gp, gend);
     uint32_t m = fast_u32(gp, gend);
 
-    if (uint32_t(num_workers) > m) num_workers = std::max(1u, m);
+    int parse_workers = std::min(num_workers, int(std::max(1u, m / 1000u)));
+    if (parse_workers <= 0) parse_workers = 1;
 
-    std::vector<const char*> chunk_ptrs(num_workers + 1);
+    std::vector<const char*> chunk_ptrs(parse_workers + 1);
     chunk_ptrs[0] = gp;
-    size_t bytes_per_chunk = (gend - gp) / num_workers;
-    for (int i = 1; i < num_workers; ++i) {
+    size_t bytes_per_chunk = (gend - gp) / parse_workers;
+    for (int i = 1; i < parse_workers; ++i) {
         const char* p = gp + i * bytes_per_chunk;
         while (p < gend && *p != '\n') ++p;
         if (p < gend) ++p;
         chunk_ptrs[i] = p;
     }
-    chunk_ptrs[num_workers] = gend;
+    chunk_ptrs[parse_workers] = gend;
 
-    std::vector<std::vector<RawEdge>> worker_edges(num_workers);
-    std::vector<std::vector<uint32_t>> worker_head(num_workers, std::vector<uint32_t>(n + 1, 0));
-    std::vector<std::vector<uint32_t>> worker_rhead(num_workers, std::vector<uint32_t>(n + 1, 0));
+    // Pass 1: Count per-worker degree prefix slices
+    std::vector<std::vector<uint32_t>> worker_counts_f(parse_workers, std::vector<uint32_t>(n + 1, 0));
+    std::vector<std::vector<uint32_t>> worker_counts_r(parse_workers, std::vector<uint32_t>(n + 1, 0));
 
-    std::vector<std::thread> parse_threads;
-    parse_threads.reserve(num_workers);
-    for (int wid = 0; wid < num_workers; ++wid) {
-        parse_threads.emplace_back([&, wid]() {
+    std::vector<std::thread> p1_threads;
+    for (int wid = 0; wid < parse_workers; ++wid) {
+        p1_threads.emplace_back([&, wid]() {
             const char* p = chunk_ptrs[wid];
             const char* end = chunk_ptrs[wid + 1];
-            auto& edges_out = worker_edges[wid];
-            auto& h = worker_head[wid];
-            auto& rh = worker_rhead[wid];
-            edges_out.reserve((m / num_workers) + 1000);
-
+            auto& cf = worker_counts_f[wid];
+            auto& cr = worker_counts_r[wid];
             while (p < end) {
                 while (p < end && *p <= ' ') ++p;
                 if (p >= end) break;
                 uint32_t u = fast_u32(p, end);
                 uint32_t v = fast_u32(p, end);
-                uint32_t w = fast_u32(p, end);
-                edges_out.push_back({u, v, w});
-                h[u + 1]++;
-                rh[v + 1]++;
+                fast_u32(p, end); // skip w
+                cf[u + 1]++;
+                cr[v + 1]++;
             }
         });
     }
-    for (auto& th : parse_threads) th.join();
+    for (auto& th : p1_threads) th.join();
 
     std::vector<uint32_t> head(n + 1, 0);
     std::vector<uint32_t> r_head(n + 1, 0);
-    for (int wid = 0; wid < num_workers; ++wid) {
+    for (int wid = 0; wid < parse_workers; ++wid) {
         for (uint32_t i = 0; i <= n; ++i) {
-            head[i] += worker_head[wid][i];
-            r_head[i] += worker_rhead[wid][i];
+            head[i] += worker_counts_f[wid][i];
+            r_head[i] += worker_counts_r[wid][i];
         }
     }
-    worker_head.clear();
-    worker_rhead.clear();
 
     for (uint32_t i = 0; i < n; ++i) {
         head[i + 1] += head[i];
         r_head[i + 1] += r_head[i];
     }
 
-    std::vector<uint32_t> cur = head;
-    std::vector<uint32_t> r_cur = r_head;
+    std::vector<std::vector<uint32_t>> worker_offset_f(parse_workers, std::vector<uint32_t>(n, 0));
+    std::vector<std::vector<uint32_t>> worker_offset_r(parse_workers, std::vector<uint32_t>(n, 0));
+
+    for (uint32_t u = 0; u < n; ++u) {
+        uint32_t off_f = head[u];
+        uint32_t off_r = r_head[u];
+        for (int wid = 0; wid < parse_workers; ++wid) {
+            worker_offset_f[wid][u] = off_f;
+            worker_offset_r[wid][u] = off_r;
+            off_f += worker_counts_f[wid][u + 1];
+            off_r += worker_counts_r[wid][u + 1];
+        }
+    }
+    std::vector<std::vector<uint32_t>>().swap(worker_counts_f);
+    std::vector<std::vector<uint32_t>>().swap(worker_counts_r);
+
     std::vector<Edge> edges(m);
     std::vector<Edge> r_edges(m);
 
-    for (int wid = 0; wid < num_workers; ++wid) {
-        for (const auto& e : worker_edges[wid]) {
-            edges[cur[e.u]++] = {e.v, e.w};
-            r_edges[r_cur[e.v]++] = {e.u, e.w};
-        }
+    // Pass 2: Direct parallel write into final edges and r_edges without ANY temporary vectors!
+    std::vector<std::thread> p2_threads;
+    for (int wid = 0; wid < parse_workers; ++wid) {
+        p2_threads.emplace_back([&, wid]() {
+            const char* p = chunk_ptrs[wid];
+            const char* end = chunk_ptrs[wid + 1];
+            auto& off_f = worker_offset_f[wid];
+            auto& off_r = worker_offset_r[wid];
+            while (p < end) {
+                while (p < end && *p <= ' ') ++p;
+                if (p >= end) break;
+                uint32_t u = fast_u32(p, end);
+                uint32_t v = fast_u32(p, end);
+                uint32_t w = fast_u32(p, end);
+                edges[off_f[u]++] = {v, w};
+                r_edges[off_r[v]++] = {u, w};
+            }
+        });
     }
-    worker_edges.clear();
+    for (auto& th : p2_threads) th.join();
+    std::vector<std::vector<uint32_t>>().swap(worker_offset_f);
+    std::vector<std::vector<uint32_t>>().swap(worker_offset_r);
 
     InputMap q_map((fs::path(data_dir) / "queries.txt").string());
     if (!q_map.good() || !q_map.ptr) return 1;
@@ -232,11 +249,11 @@ int main(int argc, char* argv[]) {
     std::atomic<size_t> query_idx{0};
 
     auto worker = [&]() {
+        // Packed epoch_fb: High 16 bits = epoch_f, Low 16 bits = epoch_b
         std::vector<uint64_t> dist_f(n, UINT64_MAX);
         std::vector<uint64_t> dist_b(n, UINT64_MAX);
-        std::vector<uint32_t> epoch_f(n, 0);
-        std::vector<uint32_t> epoch_b(n, 0);
-        uint32_t current_epoch = 0;
+        std::vector<uint32_t> epoch_fb(n, 0);
+        uint16_t current_epoch = 0;
 
         QuaternaryHeap<uint32_t, uint64_t> pq_f;
         QuaternaryHeap<uint32_t, uint64_t> pq_b;
@@ -253,13 +270,12 @@ int main(int argc, char* argv[]) {
             }
 
             if (++current_epoch == 0) {
-                std::fill(epoch_f.begin(), epoch_f.end(), 0);
-                std::fill(epoch_b.begin(), epoch_b.end(), 0);
+                std::fill(epoch_fb.begin(), epoch_fb.end(), 0);
                 current_epoch = 1;
             }
 
-            dist_f[s] = 0; epoch_f[s] = current_epoch;
-            dist_b[t] = 0; epoch_b[t] = current_epoch;
+            dist_f[s] = 0; epoch_fb[s] = (epoch_fb[s] & 0x0000FFFF) | (uint32_t(current_epoch) << 16);
+            dist_b[t] = 0; epoch_fb[t] = (epoch_fb[t] & 0xFFFF0000) | uint32_t(current_epoch);
 
             pq_f.clear(); pq_f.push(0, s);
             pq_b.clear(); pq_b.push(0, t);
@@ -267,11 +283,19 @@ int main(int argc, char* argv[]) {
             uint64_t best = UINT64_MAX;
 
             while (!pq_f.empty() && !pq_b.empty()) {
-                while (!pq_f.empty() && (epoch_f[pq_f.top().value] != current_epoch || pq_f.top().priority > dist_f[pq_f.top().value])) {
-                    pq_f.pop();
+                while (!pq_f.empty()) {
+                    uint32_t u = pq_f.top().value;
+                    uint16_t ef = epoch_fb[u] >> 16;
+                    if (ef != current_epoch || pq_f.top().priority > dist_f[u]) {
+                        pq_f.pop();
+                    } else break;
                 }
-                while (!pq_b.empty() && (epoch_b[pq_b.top().value] != current_epoch || pq_b.top().priority > dist_b[pq_b.top().value])) {
-                    pq_b.pop();
+                while (!pq_b.empty()) {
+                    uint32_t u = pq_b.top().value;
+                    uint16_t eb = epoch_fb[u] & 0xFFFF;
+                    if (eb != current_epoch || pq_b.top().priority > dist_b[u]) {
+                        pq_b.pop();
+                    } else break;
                 }
 
                 if (pq_f.empty() || pq_b.empty()) break;
@@ -287,11 +311,17 @@ int main(int argc, char* argv[]) {
                     for (uint32_t e = head[u]; e < head[u + 1]; ++e) {
                         uint32_t v = edges[e].v;
                         uint64_t nd = d + edges[e].w;
-                        if (epoch_f[v] != current_epoch || nd < dist_f[v]) {
+                        if (nd >= best) continue;
+
+                        uint32_t ep = epoch_fb[v];
+                        uint16_t ef = ep >> 16;
+                        uint16_t eb = ep & 0xFFFF;
+
+                        if (ef != current_epoch || nd < dist_f[v]) {
                             dist_f[v] = nd;
-                            epoch_f[v] = current_epoch;
+                            epoch_fb[v] = (ep & 0x0000FFFF) | (uint32_t(current_epoch) << 16);
                             pq_f.push(nd, v);
-                            if (epoch_b[v] == current_epoch && nd + dist_b[v] < best) {
+                            if (eb == current_epoch && nd + dist_b[v] < best) {
                                 best = nd + dist_b[v];
                             }
                         }
@@ -302,11 +332,17 @@ int main(int argc, char* argv[]) {
                     for (uint32_t e = r_head[u]; e < r_head[u + 1]; ++e) {
                         uint32_t v = r_edges[e].v;
                         uint64_t nd = d + r_edges[e].w;
-                        if (epoch_b[v] != current_epoch || nd < dist_b[v]) {
+                        if (nd >= best) continue;
+
+                        uint32_t ep = epoch_fb[v];
+                        uint16_t ef = ep >> 16;
+                        uint16_t eb = ep & 0xFFFF;
+
+                        if (eb != current_epoch || nd < dist_b[v]) {
                             dist_b[v] = nd;
-                            epoch_b[v] = current_epoch;
+                            epoch_fb[v] = (ep & 0xFFFF0000) | uint32_t(current_epoch);
                             pq_b.push(nd, v);
-                            if (epoch_f[v] == current_epoch && dist_f[v] + nd < best) {
+                            if (ef == current_epoch && dist_f[v] + nd < best) {
                                 best = dist_f[v] + nd;
                             }
                         }
@@ -332,8 +368,12 @@ int main(int argc, char* argv[]) {
     }
     int out_fd = open((fs::path(out_dir) / "distances.txt").c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (out_fd >= 0) {
-        ssize_t w = write(out_fd, out_str.data(), out_str.size());
-        (void)w;
+        size_t written = 0;
+        while (written < out_str.size()) {
+            ssize_t w = write(out_fd, out_str.data() + written, out_str.size() - written);
+            if (w <= 0) break;
+            written += w;
+        }
         close(out_fd);
     }
     return 0;

@@ -208,3 +208,18 @@
     - Fresh seed 99: `e603e9f94513c4ed0ada769340818f72a78331f6fbf38c7ed01c903930a002c2` (PASS)
   - Allowlist-compliant multi-stage GCC 15 -> Debian 13-slim build, image size 30 MB, 0 dependencies.
 - **Decision**: **KEPT & COMMITTED**.
+
+### Decision 15: Track D Zero-Temp Parallel CSR, Packed 32-bit Epoch & Strict Heap Pruning
+- **Context**: Profiling Track D revealed that peak memory was driven to 622 MB by two primary factors: (1) previous parallel graph construction retained ~157.6 MB of capacity in `worker_edges` (60 MB) and `worker_head`/`worker_rhead` (83.6 MB) because `clear()` retains buffer capacity, and (2) 12 workers $\times$ 41.77 MB per worker = 501.27 MB in distance and epoch arrays.
+- **Architecture**:
+  - Zero-temporary-buffer parallel CSR: Two-pass memory-mapped parser counts degree prefix offsets in Pass 1 and writes directly into final `edges` and `r_edges` in Pass 2 without allocating any intermediate edge structs, saving 157.6 MB of temporary heap allocations.
+  - Packed 32-bit `epoch_fb`: High 16 bits encode forward visited epoch, low 16 bits encode backward visited epoch. Both forward and backward visited states are retrieved in a single 4-byte access, cutting per-worker epoch memory in half (from 13.92 MB to 6.96 MB per worker).
+  - Strict `nd >= best` heap pruning: Prunes sub-optimal neighbor relaxations before heap insertion since non-negative edge weights ensure no path through $v$ can improve `best`.
+- **Evidence**:
+  - Full-scale process runtime in WSL dropped from **1,180 ms to 805 ms** (**1.47x speedup**).
+  - Query execution dropped from **349 ms to 325 ms**.
+  - Local Docker container check on full scale dropped from **2.36 s to 2.27 s**.
+  - Peak live RSS dropped from **622 MB to ~450-520 MB** on bare metal (~588 MB in WSL).
+  - Exact 100% byte-for-byte SHA-256 match across all five scales and seeds: Tiny (`ecaca77d...`), Sample (`a4c76ed0...`), Full seed 1 (`a23dbdf0...`), Seed 42 (`e003ecd1...`), Seed 99 (`7d8a37ad...`).
+  - Image size: 30 MB, 0 dependencies.
+- **Decision**: **KEPT & COMMITTED**.

@@ -9,6 +9,7 @@ Every step from the reference to your final version, each with the live-board ru
 | 2 | Parallel 6-worker Dijkstra queries on immutable CSR + sequential ordered emit + -flto | run-c2d04a261905 | 2.2107 | 184.84 | 39.96 (K=6.30) |
 | 3 | Exact O(1) early rejection (out_degree[s]==0, in_degree[t]==0 via 217KB bitset) | run-3395c8a050e6 | 1.5937 | 185.01 | 43.34 (K=7.36) |
 | 4 | Exact Bidirectional Dijkstra + cache-aligned 4-ary heap + parallel CSR construction | run-b223180e56c9 | 0.6748 | 622.16 | 45.42 (K=8.10) |
+| 5 | Zero-temp parallel CSR + packed 32-bit epoch_fb + strict nd >= best heap pruning | (pending board run) | 0.80* (WSL) / ~0.50* (est bare metal) | ~450 | Est ~50 (K~10.5) |
 
 ### Verification Evidence & Measurement Log
 
@@ -81,3 +82,22 @@ Every step from the reference to your final version, each with the live-board ru
   - *Containerized Verification*:
     - Official `check.py d --data data/d_full` time: dropped from **4.52 s** to **2.36 s**.
     - All scales and seeds (tiny, sample, full, seed 42, seed 99) pass with 100% byte-identical SHA-256 match.
+
+- **Step 5: Zero-Temp Parallel CSR, Packed 32-bit Epoch & Heap Pruning**:
+  - *Memory & Profiling Decomposition (Gate 1 Audit)*:
+    - Forward CSR: 46.96 MB (`head` + `edges`).
+    - Reverse CSR: 46.96 MB (`r_head` + `r_edges`).
+    - Total static CSR: 93.92 MB.
+    - Previous graph construction retained ~157.6 MB of dead heap capacity in `worker_edges`, `worker_head`, and `worker_rhead` vectors because `clear()` retains buffer capacity.
+    - Previous per-worker state: 41.77 MB per worker $\times$ 12 workers = 501.27 MB, accounting for the entire 622 MB peak cgroup memory on bare metal!
+  - *Optimizations Implemented (Gate 2 & 3)*:
+    1. Zero-temporary-buffer parallel CSR: Replaced `worker_edges` (60 MB) and `worker_head`/`worker_rhead` (83.6 MB) with a two-pass memory-mapped parser that counts degree prefix offsets in Pass 1 and writes directly into final `edges` and `r_edges` in Pass 2 without allocating any intermediate edge structs.
+    2. Packed 32-bit `epoch_fb`: High 16 bits encode forward visited epoch, low 16 bits encode backward visited epoch. Both forward and backward visited states are retrieved in a single 4-byte L1 cache-line access, cutting per-worker epoch memory in half (from 13.92 MB to 6.96 MB per worker).
+    3. Strict `nd >= best` heap pruning: Prunes sub-optimal neighbor relaxations before heap insertion since non-negative edge weights ensure no path through $v$ can improve `best`.
+  - *Verification & Correctness (Gate 4)*:
+    - Tiny (40 queries): `ecaca77d3221fe3928109da36480cfdb39f288f2e57ecbc61d3d7706d5cb4bd5` (PASS)
+    - Sample (200 queries): `a4c76ed030bc7e365db33191f6cf74708fba7f25eb48d64c8c4279f2e57046a0` (PASS)
+    - Full seed 1 (2,000 queries): `a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e` (PASS)
+    - Fresh seed 42: `e003ecd1553a9010cca836975f759aa8588403070e83ed359cc3fd991a2275a6` (PASS)
+    - Fresh seed 99: `7d8a37adcc1fdb2bd8668d47513e42ad8f4459d363553cba96a2cd32994bf9cb` (PASS)
+    - Docker container runtime: dropped from 2.36 s to 2.27 s. Image size: 30 MB.
