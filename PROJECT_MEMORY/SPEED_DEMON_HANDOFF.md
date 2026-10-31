@@ -1,7 +1,7 @@
 # Speed Demon Phase III Handoff
 
 - Branch: `speed-demon`
-- Checkpoint commit: `d2aba07` (refresh after this checkpoint is committed)
+- Checkpoint commit: `f542f9b` (refresh after this checkpoint is committed)
 - Official scored source baseline: `ccdbb2a64b0b6335df8709a03c9d68834443fc8f`
 - Rollback tag: `astro-scored-ccdbb2a`
 - Experiment branch: `exp/phase2`
@@ -10,14 +10,14 @@
 
 | Track | Run | T (s) | M (bytes) | S | K | Points |
 |---|---|---:|---:|---:|---:|---:|
-| A | `run-6aa7f879d0cd` | 0.106657 | 69038080 | 399 | 16.396307 | 60.737302 |
+| A | `run-a7a9c1ef5deb` | 0.105859 | 68440064 | 399 | 16.486653 | 60.856624 |
 | B | `run-870bfa70b937` | 0.709844 | 251883520 | 752 | 10.012471 | 50.027063 |
 | C | `run-44bf4f0a8ed0` | 0.130768 | 18784256 | 502 | 15.127926 | 58.988969 |
 | D | `run-b50731622d5a` | 0.493443 | 253067264 | 426 | 11.072623 | 52.212525 |
 
-Best-three A/C/D geometric mean: `57.191787` machine points. Live board snapshot previously reported rank 61 and fifth place `76.361508`.
+Best-three A/C/D geometric mean: `57.229215` machine points. Live board snapshot previously reported rank 61 and fifth place `76.361508`.
 
-The 2026-10-31T17:30:58Z board snapshot confirms the same A/C/D best runs, rank 61, and a current fifth-place portfolio of `76.421636`; the current A/C/D geometric mean is `57.191787`, leaving a `19.229849` gap.
+The 2026-10-31T17:50:09Z board snapshot reports rank 63, fifth-place portfolio `76.527660`, and current A/C/D geometric mean `57.229215`, leaving a `19.298446` gap.
 
 ## Phase III findings
 
