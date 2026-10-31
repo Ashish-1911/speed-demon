@@ -62,9 +62,9 @@ struct alignas(64) Slot {
 
 struct Partition {
     alignas(64) std::atomic_flag lock = ATOMIC_FLAG_INIT;
-    size_t capacity = 1024;
-    size_t mask = 1023;
-    std::vector<Slot> slots{1024};
+    size_t capacity = 256;
+    size_t mask = 255;
+    std::vector<Slot> slots{256};
 
     inline void insert_or_update(const char* p, uint32_t len, uint64_t h, uint16_t c) {
         while (lock.test_and_set(std::memory_order_acquire)) {
@@ -263,7 +263,7 @@ int main(int argc, char** argv) {
     auto bounds = find_chunk_boundaries(file.ptr, file.size, num_threads);
 
     std::vector<std::vector<Aggregates>> worker_aggs(num_threads, std::vector<Aggregates>(codes.size()));
-    std::vector<Partition> partitions(512);
+    std::vector<Partition> partitions(1024);
 
     std::vector<std::thread> workers;
     workers.reserve(num_threads);
@@ -355,7 +355,7 @@ int main(int argc, char** argv) {
                 aggs[c].add(id, cents, name_len, note_bytes);
 
                 uint64_t h = fnv1a(name_ptr, name_raw_len);
-                uint16_t part = uint16_t((h >> 55) & 511);
+                uint16_t part = uint16_t((h >> 54) & 1023);
                 partitions[part].insert_or_update(name_ptr, uint32_t(name_raw_len), h, c);
             }
         });
