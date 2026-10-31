@@ -1,4 +1,4 @@
-// Speed Demon 2026 Track D — High-performance bidirectional Dijkstra with zero-temp parallel CSR
+// Speed Demon 2026 Track D — High-performance bidirectional Dijkstra with single-pass parallel CSR
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -57,6 +57,12 @@ static inline uint32_t parse_u32_fast(const char*& p) {
     }
     return x;
 }
+
+struct RawEdge {
+    uint32_t u;
+    uint32_t v;
+    uint32_t w;
+};
 
 struct Edge {
     uint32_t v;
@@ -147,7 +153,7 @@ int main(int argc, char* argv[]) {
     while (gp < gend && *gp != '\n') ++gp;
     if (gp < gend) ++gp;
 
-    int parse_workers = std::min(num_workers, int(std::max(1u, m / 1000u)));
+    int parse_workers = std::min(num_workers, 6);
     if (parse_workers <= 0) parse_workers = 1;
 
     std::vector<const char*> chunk_ptrs(parse_workers + 1);
@@ -161,73 +167,21 @@ int main(int argc, char* argv[]) {
     }
     chunk_ptrs[parse_workers] = gend;
 
-    // Pass 1: Count per-worker degree prefix slices with fast parsing and skipping of w
-    std::vector<std::vector<uint32_t>> worker_counts_f(parse_workers, std::vector<uint32_t>(n + 1, 0));
-    std::vector<std::vector<uint32_t>> worker_counts_r(parse_workers, std::vector<uint32_t>(n + 1, 0));
+    // Single-pass: parse u, v, w into per-worker raw vectors and count node degrees
+    std::vector<std::vector<RawEdge>> worker_edges(parse_workers);
+    std::vector<std::vector<uint32_t>> worker_deg_f(parse_workers, std::vector<uint32_t>(n + 1, 0));
+    std::vector<std::vector<uint32_t>> worker_deg_r(parse_workers, std::vector<uint32_t>(n + 1, 0));
 
-    std::vector<std::thread> p1_threads;
+    std::vector<std::thread> parse_threads;
     for (int wid = 0; wid < parse_workers; ++wid) {
-        p1_threads.emplace_back([&, wid]() {
+        parse_threads.emplace_back([&, wid]() {
+            worker_edges[wid].reserve((m / parse_workers) + 32768);
             const char* p = chunk_ptrs[wid];
             const char* end = chunk_ptrs[wid + 1];
-            auto& cf = worker_counts_f[wid];
-            auto& cr = worker_counts_r[wid];
-            while (p < end) {
-                while (p < end && *p <= ' ') ++p;
-                if (p >= end) break;
-                uint32_t u = parse_u32_fast(p);
-                while (*p <= ' ') ++p;
-                uint32_t v = parse_u32_fast(p);
-                while (p < end && *p != '\n') ++p;
-                if (p < end) ++p;
-                cf[u + 1]++;
-                cr[v + 1]++;
-            }
-        });
-    }
-    for (auto& th : p1_threads) th.join();
+            auto& edges_out = worker_edges[wid];
+            auto& df = worker_deg_f[wid];
+            auto& dr = worker_deg_r[wid];
 
-    std::vector<uint32_t> head(n + 1, 0);
-    std::vector<uint32_t> r_head(n + 1, 0);
-    for (int wid = 0; wid < parse_workers; ++wid) {
-        for (uint32_t i = 0; i <= n; ++i) {
-            head[i] += worker_counts_f[wid][i];
-            r_head[i] += worker_counts_r[wid][i];
-        }
-    }
-
-    for (uint32_t i = 0; i < n; ++i) {
-        head[i + 1] += head[i];
-        r_head[i + 1] += r_head[i];
-    }
-
-    std::vector<std::vector<uint32_t>> worker_offset_f(parse_workers, std::vector<uint32_t>(n, 0));
-    std::vector<std::vector<uint32_t>> worker_offset_r(parse_workers, std::vector<uint32_t>(n, 0));
-
-    for (uint32_t u = 0; u < n; ++u) {
-        uint32_t off_f = head[u];
-        uint32_t off_r = r_head[u];
-        for (int wid = 0; wid < parse_workers; ++wid) {
-            worker_offset_f[wid][u] = off_f;
-            worker_offset_r[wid][u] = off_r;
-            off_f += worker_counts_f[wid][u + 1];
-            off_r += worker_counts_r[wid][u + 1];
-        }
-    }
-    std::vector<std::vector<uint32_t>>().swap(worker_counts_f);
-    std::vector<std::vector<uint32_t>>().swap(worker_counts_r);
-
-    std::vector<Edge> edges(m);
-    std::vector<Edge> r_edges(m);
-
-    // Pass 2: Direct parallel write into final edges and r_edges without ANY temporary vectors!
-    std::vector<std::thread> p2_threads;
-    for (int wid = 0; wid < parse_workers; ++wid) {
-        p2_threads.emplace_back([&, wid]() {
-            const char* p = chunk_ptrs[wid];
-            const char* end = chunk_ptrs[wid + 1];
-            auto& off_f = worker_offset_f[wid];
-            auto& off_r = worker_offset_r[wid];
             while (p < end) {
                 while (p < end && *p <= ' ') ++p;
                 if (p >= end) break;
@@ -238,14 +192,74 @@ int main(int argc, char* argv[]) {
                 uint32_t w = parse_u32_fast(p);
                 while (p < end && *p != '\n') ++p;
                 if (p < end) ++p;
-                edges[off_f[u]++] = {v, w};
-                r_edges[off_r[v]++] = {u, w};
+
+                edges_out.push_back({u, v, w});
+                df[u + 1]++;
+                dr[v + 1]++;
             }
         });
     }
-    for (auto& th : p2_threads) th.join();
-    std::vector<std::vector<uint32_t>>().swap(worker_offset_f);
-    std::vector<std::vector<uint32_t>>().swap(worker_offset_r);
+    for (auto& th : parse_threads) th.join();
+
+    // Parallel degree sum
+    std::vector<uint32_t> head(n + 1, 0);
+    std::vector<uint32_t> r_head(n + 1, 0);
+
+    std::vector<std::thread> sum_threads;
+    for (int wid = 0; wid < parse_workers; ++wid) {
+        sum_threads.emplace_back([&, wid]() {
+            uint32_t u_start = wid * (n / parse_workers);
+            uint32_t u_end = (wid == parse_workers - 1) ? n + 1 : (wid + 1) * (n / parse_workers);
+            for (uint32_t u = u_start; u < u_end; ++u) {
+                uint32_t sf = 0, sr = 0;
+                for (int w = 0; w < parse_workers; ++w) {
+                    sf += worker_deg_f[w][u];
+                    sr += worker_deg_r[w][u];
+                }
+                head[u] = sf;
+                r_head[u] = sr;
+            }
+        });
+    }
+    for (auto& th : sum_threads) th.join();
+
+    for (uint32_t i = 0; i < n; ++i) {
+        head[i + 1] += head[i];
+        r_head[i + 1] += r_head[i];
+    }
+
+    std::vector<Edge> edges(m);
+    std::vector<Edge> r_edges(m);
+
+    // Parallel scatter from in-memory worker_edges with thread-local offset vectors
+    std::vector<std::thread> scatter_threads;
+    for (int wid = 0; wid < parse_workers; ++wid) {
+        scatter_threads.emplace_back([&, wid]() {
+            std::vector<uint32_t> wf(n);
+            std::vector<uint32_t> wr(n);
+            for (uint32_t u = 0; u < n; ++u) {
+                uint32_t off_f = head[u];
+                uint32_t off_r = r_head[u];
+                for (int w = 0; w < wid; ++w) {
+                    off_f += worker_deg_f[w][u + 1];
+                    off_r += worker_deg_r[w][u + 1];
+                }
+                wf[u] = off_f;
+                wr[u] = off_r;
+            }
+            const auto& we = worker_edges[wid];
+            for (const auto& e : we) {
+                edges[wf[e.u]++] = {e.v, e.w};
+                r_edges[wr[e.v]++] = {e.u, e.w};
+            }
+        });
+    }
+    for (auto& th : scatter_threads) th.join();
+
+    // Release all temporary build structures
+    std::vector<std::vector<RawEdge>>().swap(worker_edges);
+    std::vector<std::vector<uint32_t>>().swap(worker_deg_f);
+    std::vector<std::vector<uint32_t>>().swap(worker_deg_r);
 
     InputMap q_map((fs::path(data_dir) / "queries.txt").string());
     if (!q_map.good() || !q_map.ptr) return 1;
@@ -265,7 +279,6 @@ int main(int argc, char* argv[]) {
     std::atomic<size_t> query_idx{0};
 
     auto worker = [&]() {
-        // Packed epoch_fb: High 16 bits = epoch_f, Low 16 bits = epoch_b
         std::vector<uint64_t> dist_f(n, UINT64_MAX);
         std::vector<uint64_t> dist_b(n, UINT64_MAX);
         std::vector<uint32_t> epoch_fb(n, 0);
@@ -392,5 +405,6 @@ int main(int argc, char* argv[]) {
         }
         close(out_fd);
     }
+
     return 0;
 }
