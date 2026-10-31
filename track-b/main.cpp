@@ -77,9 +77,9 @@ inline uint64_t fnv1a(const char* s, size_t len) {
 
 struct HashSlot {
     uint64_t hash = 0;
-    uint32_t term_id = UINT32_MAX;
+    // Query terms are <=32 bytes; 24 bits comfortably hold every possible term ID.
+    uint32_t id_length = 0;
     uint32_t term_str_offset = 0;
-    uint16_t term_len = 0;
 };
 
 struct FlatTermDict {
@@ -93,6 +93,17 @@ struct FlatTermDict {
     }
 
     void insert(const std::string& term, uint32_t id) {
+        // The number of distinct query terms varies with input; never fill the table.
+        if ((size_t(id) + 1) * 2 > table.size()) {
+            auto old = std::move(table);
+            init(old.size() * 2);
+            for (const auto& slot : old) {
+                if (slot.hash == 0) continue;
+                uint32_t pos = slot.hash & mask;
+                while (table[pos].hash != 0) pos = (pos + 1) & mask;
+                table[pos] = slot;
+            }
+        }
         uint64_t h = fnv1a(term.data(), term.size());
         uint32_t idx = h & mask;
         uint32_t str_offset = term_storage.size();
@@ -101,7 +112,7 @@ struct FlatTermDict {
         while (table[idx].hash != 0) {
             idx = (idx + 1) & mask;
         }
-        table[idx] = {h, id, str_offset, (uint16_t)term.size()};
+        table[idx] = {h, id | (uint32_t(term.size()) << 24), str_offset};
     }
 
     inline int32_t lookup(uint64_t h, const char* raw_str, uint32_t len) const {
@@ -109,7 +120,7 @@ struct FlatTermDict {
         while (true) {
             uint64_t slot_h = table[idx].hash;
             if (slot_h == 0) return -1;
-            if (slot_h == h && table[idx].term_len == len) {
+            if (slot_h == h && (table[idx].id_length >> 24) == len) {
                 const char* stored = term_storage.data() + table[idx].term_str_offset;
                 bool match = true;
                 for (uint32_t i = 0; i < len; ++i) {
@@ -118,7 +129,7 @@ struct FlatTermDict {
                         break;
                     }
                 }
-                if (match) return table[idx].term_id;
+                if (match) return table[idx].id_length & 0xffffff;
             }
             idx = (idx + 1) & mask;
         }
@@ -142,6 +153,20 @@ struct DocSlice {
 
 inline void and_op(const uint32_t* a, size_t a_sz, const uint32_t* b, size_t b_sz, std::vector<uint32_t>& out) {
     out.clear();
+    if (a_sz > b_sz) { std::swap(a, b); std::swap(a_sz, b_sz); }
+    if (a_sz == 0) return;
+    // Sparse intersections should not scan an entire common-term posting list.
+    if (b_sz / a_sz >= 16) {
+        size_t j = 0;
+        for (size_t i = 0; i < a_sz && j < b_sz; ++i) {
+            size_t step = 1;
+            while (step < b_sz - j && b[j + step] < a[i]) step *= 2;
+            size_t end = j + std::min(step, b_sz - j);
+            j = std::lower_bound(b + j, b + end, a[i]) - b;
+            if (j < b_sz && b[j] == a[i]) out.push_back(a[i]);
+        }
+        return;
+    }
     size_t i = 0, j = 0;
     while (i < a_sz && j < b_sz) {
         if (a[i] == b[j]) {

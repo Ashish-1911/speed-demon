@@ -64,6 +64,19 @@ Every step from the reference to your final version, each with the live-board ru
     - Source lines: 724 lines. Dependencies: 0. Docker image: 31 MB.
 
 - **Docker Image & Compliance**:
-  - Pinned GCC 15 multi-stage build $\to$ Debian 13-slim (`allowlist.json` compliant)
+  - Pinned GCC 15 multi-stage build $\to$ Debian 13-slim (`engineering/evidence/allowlist.json` compliant)
   - Image size: 31 MB (cap is 2 GB)
   - Dependencies: 0
+
+
+## October 31 controlled campaign
+
+Baseline source: `a3ab590f3dfe59eaa69afdc0fd8094814dfdd573`. Historical best: `run-b6be10cb0a80`, T=0.846156 s, M=254382080 bytes, S=722, D=1, K=9.208571, 48.209612 points. Latest baseline-tree run: `run-da0adf9f3156`, 47.627476 points. Historical best and latest are distinct measurements.
+
+Experiment: **Adaptive galloping intersection for skewed sorted posting lists**. Seven alternating local process runs on WSL i7-13650HX, GCC 15.2, `-O3 -flto -march=haswell -pthread`, input/output on Linux tmpfs: median 0.683967 -> 0.569268 s (16.8% reduction). Raw measurements: `engineering/evidence/b-intersect.json` under engineering/evidence. These are not official times. GNU time RSS includes mapped input pages; it is not the board memory axis.
+
+All existing tiny/sample/full seed-1 and sample seeds 42/99 outputs matched reference SHA-256. Offline Docker check passed full seed 1 with allowlisted images and the 8 GiB sandbox. ASan/UBSan and TSan tiny runs passed. Fresh full-scale and targeted test details are recorded in the campaign evidence.
+
+The old Step 3 pending estimate is superseded by the historical best above. The galloping branch changes only set intersection, preserving left-to-right Boolean operators and exact phrase verification. Research context: https://arxiv.org/abs/1401.6399 (our candidate uses scalar exponential search, not that paper's SIMD implementation).
+
+Second isolated pass: pack query-term ID and length into one 32-bit word, reducing each dictionary slot from 24 to 16 bytes. Exact lowercase byte comparison remains mandatory. Seven alternating runs in a later, slower host timing window: see `engineering/evidence/b-compact.json`; compare only within that window. Add geometric table growth at half load to prevent nonterminating probes when the query vocabulary exceeds the original fixed capacity. Final canonical S=752, D=1.
