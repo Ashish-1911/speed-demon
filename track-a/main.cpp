@@ -39,14 +39,6 @@ struct InputMap {
 constexpr uint64_t FNV_OFFSET_BASIS = 14695981039346656037ULL;
 constexpr uint64_t FNV_PRIME = 1099511628211ULL;
 
-inline uint64_t hash_endpoint(const char* s, size_t len) {
-    uint64_t h = FNV_OFFSET_BASIS;
-    for (size_t i = 0; i < len; ++i) {
-        h = (h ^ uint8_t(s[i])) * FNV_PRIME;
-    }
-    return h == 0 ? 1 : h;
-}
-
 struct EpSlot {
     uint64_t hash = 0;
     const char* ptr = nullptr;
@@ -64,8 +56,8 @@ struct LocalEpDict {
         endpoints.reserve(2048);
     }
 
-    inline uint16_t get_or_insert(const char* ptr, uint16_t len) {
-        uint64_t h = hash_endpoint(ptr, len);
+    inline uint16_t get_or_insert(const char* ptr, uint16_t len, uint64_t h) {
+        if (h == 0) h = 1;
         size_t idx = h & MASK;
         while (true) {
             if (table[idx].hash == 0) {
@@ -169,7 +161,12 @@ int main(int argc, char** argv) {
 
     const char* base = input.bytes;
     size_t total_size = input.size;
-    if (total_size == 0) return 0;
+    if (total_size == 0) {
+        int fd = open(out_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+        if (fd < 0) return 1;
+        close(fd);
+        return 0;
+    }
 
     // Six physical P-cores
     constexpr size_t workers = 6;
@@ -246,10 +243,13 @@ int main(int argc, char** argv) {
 
             const char* ep_start = m_ptr + 1;
             const char* ep_end = ep_start;
-            while (*ep_end != ' ') ++ep_end;
+            uint64_t ep_hash = FNV_OFFSET_BASIS;
+            while (*ep_end != ' ') {
+                ep_hash = (ep_hash ^ uint8_t(*ep_end++)) * FNV_PRIME;
+            }
 
             uint16_t ep_len = static_cast<uint16_t>(ep_end - ep_start);
-            uint16_t local_eid = dict.get_or_insert(ep_start, ep_len);
+            uint16_t local_eid = dict.get_or_insert(ep_start, ep_len, ep_hash);
 
             const char* st_ptr = ep_end + 1;
             unsigned status = (st_ptr[0]-'0')*100 + (st_ptr[1]-'0')*10 + (st_ptr[2]-'0');

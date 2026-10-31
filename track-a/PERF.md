@@ -66,3 +66,12 @@ un-593ffd6b22fb
   - Full (3,100,000 lines): `495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3` (PASS)
   - Seed 42: `835c36377118af19264750c9b1031225ead44a8555e913c22d31a827dbe486c8` (PASS)
   - Seed 99: `859a0eefc73cd9e06b5ff57666d31a527bf620075c65a28034e9146b57e0a964` (PASS)
+
+
+## October 31 controlled campaign
+
+Baseline source: `a3ab590f3dfe59eaa69afdc0fd8094814dfdd573`. Historical best: `run-b34e80cbe49f`, T=0.11331 s, M=68870144 bytes, S=398, D=1, K=15.921413, 60.099081 points. Latest baseline-tree run: `run-83e1bef8d6e1`, 57.934474 points. Historical best and latest are distinct measurements.
+
+Experiment: **Fuse endpoint scanning and hashing; create output for empty input**. Seven alternating local process runs on WSL i7-13650HX, GCC 15.2, `-O3 -flto -march=haswell -pthread`, input/output on Linux tmpfs: median 0.088839 -> 0.080624 s (9.2% reduction). Raw measurements: `engineering/evidence/a-fused.json` under engineering/evidence. These are not official times. GNU time RSS includes mapped input pages; it is not the board memory axis.
+
+All existing tiny/sample/full seed-1 and sample seeds 42/99 outputs matched reference SHA-256. Offline Docker check passed full seed 1 with allowlisted images and the 8 GiB sandbox. ASan/UBSan and TSan tiny runs passed. Fresh full-scale and targeted test details are recorded in the campaign evidence.
