@@ -1,0 +1,100 @@
+[
+  {
+    "name": "c-base",
+    "rep": 0,
+    "seconds": 0.1593582259993127,
+    "stderr": "RSS_KB=219436\n",
+    "sha256": "d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536"
+  },
+  {
+    "name": "c-compact",
+    "rep": 0,
+    "seconds": 0.09699438499956159,
+    "stderr": "RSS_KB=217708\n",
+    "sha256": "d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536"
+  },
+  {
+    "name": "c-compact",
+    "rep": 1,
+    "seconds": 0.09456760000102804,
+    "stderr": "RSS_KB=217724\n",
+    "sha256": "d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536"
+  },
+  {
+    "name": "c-base",
+    "rep": 1,
+    "seconds": 0.099958904000232,
+    "stderr": "RSS_KB=219788\n",
+    "sha256": "d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536"
+  },
+  {
+    "name": "c-base",
+    "rep": 2,
+    "seconds": 0.10027024000009988,
+    "stderr": "RSS_KB=219956\n",
+    "sha256": "d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536"
+  },
+  {
+    "name": "c-compact",
+    "rep": 2,
+    "seconds": 0.1023167650000687,
+    "stderr": "RSS_KB=217676\n",
+    "sha256": "d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536"
+  },
+  {
+    "name": "c-compact",
+    "rep": 3,
+    "seconds": 0.09774734300117416,
+    "stderr": "RSS_KB=217716\n",
+    "sha256": "d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536"
+  },
+  {
+    "name": "c-base",
+    "rep": 3,
+    "seconds": 0.10572744599994621,
+    "stderr": "RSS_KB=219812\n",
+    "sha256": "d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536"
+  },
+  {
+    "name": "c-base",
+    "rep": 4,
+    "seconds": 0.09591139699841733,
+    "stderr": "RSS_KB=219996\n",
+    "sha256": "d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536"
+  },
+  {
+    "name": "c-compact",
+    "rep": 4,
+    "seconds": 0.09345229000064137,
+    "stderr": "RSS_KB=217724\n",
+    "sha256": "d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536"
+  },
+  {
+    "name": "c-compact",
+    "rep": 5,
+    "seconds": 0.12429909499951464,
+    "stderr": "RSS_KB=217904\n",
+    "sha256": "d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536"
+  },
+  {
+    "name": "c-base",
+    "rep": 5,
+    "seconds": 0.10083653499896172,
+    "stderr": "RSS_KB=219812\n",
+    "sha256": "d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536"
+  },
+  {
+    "name": "c-base",
+    "rep": 6,
+    "seconds": 0.10423837999951502,
+    "stderr": "RSS_KB=219804\n",
+    "sha256": "d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536"
+  },
+  {
+    "name": "c-compact",
+    "rep": 6,
+    "seconds": 0.09690109799885249,
+    "stderr": "RSS_KB=217700\n",
+    "sha256": "d8088b1cd42ba1338b1345b107b55db7b96ef1f5066f3ff64fd26a8912a0f536"
+  }
+]

@@ -1,0 +1,138 @@
+[
+  {
+    "track": "a",
+    "case": "empty",
+    "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "seconds": 0.0019707920000655577,
+    "stderr": "RSS_KB=4112\n",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "track": "d",
+    "case": "random0",
+    "expected": "435e85ec59648145c0094fbd2df7fa533f231be818090ace93cc52e8122286bf",
+    "seconds": 0.004286151999622234,
+    "stderr": "RSS_KB=4484\n",
+    "sha256": "435e85ec59648145c0094fbd2df7fa533f231be818090ace93cc52e8122286bf"
+  },
+  {
+    "track": "d",
+    "case": "random1",
+    "expected": "4ccde0babebe9886488793b11ae75ab222159356bad0c304dfaac74a39059b6d",
+    "seconds": 0.004082809000465204,
+    "stderr": "RSS_KB=4476\n",
+    "sha256": "4ccde0babebe9886488793b11ae75ab222159356bad0c304dfaac74a39059b6d"
+  },
+  {
+    "track": "d",
+    "case": "random2",
+    "expected": "78c7881d439867dec0214f9934ecfb1c1c3c733ad2d32406f0fa70a4a0a8df2a",
+    "seconds": 0.004951725999490009,
+    "stderr": "RSS_KB=4512\n",
+    "sha256": "78c7881d439867dec0214f9934ecfb1c1c3c733ad2d32406f0fa70a4a0a8df2a"
+  },
+  {
+    "track": "d",
+    "case": "random3",
+    "expected": "2a58139e05542a03bfd7ee0654ae8aeef7adf72649cf053854d941caa5e500e3",
+    "seconds": 0.005918033000853029,
+    "stderr": "RSS_KB=4320\n",
+    "sha256": "2a58139e05542a03bfd7ee0654ae8aeef7adf72649cf053854d941caa5e500e3"
+  },
+  {
+    "track": "d",
+    "case": "random4",
+    "expected": "49227c778a8ce0fb4adce9fa3446ad4aae8ff41a0a1fd64370567332263a31cd",
+    "seconds": 0.005807781999465078,
+    "stderr": "RSS_KB=4468\n",
+    "sha256": "49227c778a8ce0fb4adce9fa3446ad4aae8ff41a0a1fd64370567332263a31cd"
+  },
+  {
+    "track": "d",
+    "case": "random5",
+    "expected": "4fb6ebc1214da0a1ed0997e4f06070d476eef8bf60417d381bcce142eca5f9f1",
+    "seconds": 0.006745578999471036,
+    "stderr": "RSS_KB=4492\n",
+    "sha256": "4fb6ebc1214da0a1ed0997e4f06070d476eef8bf60417d381bcce142eca5f9f1"
+  },
+  {
+    "track": "d",
+    "case": "random6",
+    "expected": "0de7f4c3c782e33a0bd34bd57a31f2951b8eddafb118bf14b989ecec5a625f40",
+    "seconds": 0.005232085999523406,
+    "stderr": "RSS_KB=4424\n",
+    "sha256": "0de7f4c3c782e33a0bd34bd57a31f2951b8eddafb118bf14b989ecec5a625f40"
+  },
+  {
+    "track": "d",
+    "case": "random7",
+    "expected": "e5cf658a3f2acad684b255e1f3d1b3b21dd59001551a742e21dae244c9b558ec",
+    "seconds": 0.0048711060007917695,
+    "stderr": "RSS_KB=4480\n",
+    "sha256": "e5cf658a3f2acad684b255e1f3d1b3b21dd59001551a742e21dae244c9b558ec"
+  },
+  {
+    "track": "d",
+    "case": "random8",
+    "expected": "f3f5f6a3740c9d890ec9eaaed64597565d89a1eaf093bd03fe80007348168a16",
+    "seconds": 0.004435978000401519,
+    "stderr": "RSS_KB=4484\n",
+    "sha256": "f3f5f6a3740c9d890ec9eaaed64597565d89a1eaf093bd03fe80007348168a16"
+  },
+  {
+    "track": "d",
+    "case": "random9",
+    "expected": "6690eb1aa8e2ad65b6284e8e1386ab04bb152026977359726931c22c825394a1",
+    "seconds": 0.004441262000909774,
+    "stderr": "RSS_KB=4288\n",
+    "sha256": "6690eb1aa8e2ad65b6284e8e1386ab04bb152026977359726931c22c825394a1"
+  },
+  {
+    "track": "d",
+    "case": "random10",
+    "expected": "a8e47be133b8b23c56320b410aeb8fcbf535be15ec3edcbee8100d4ed919a0d4",
+    "seconds": 0.004720201999589335,
+    "stderr": "RSS_KB=4496\n",
+    "sha256": "a8e47be133b8b23c56320b410aeb8fcbf535be15ec3edcbee8100d4ed919a0d4"
+  },
+  {
+    "track": "d",
+    "case": "random11",
+    "expected": "bd8f2938dc3cf478940581d0e7279e008e99c67280b957a1d379b8e7c68ea10d",
+    "seconds": 0.005795876999400207,
+    "stderr": "RSS_KB=4476\n",
+    "sha256": "bd8f2938dc3cf478940581d0e7279e008e99c67280b957a1d379b8e7c68ea10d"
+  },
+  {
+    "track": "d",
+    "case": "epoch-wrap",
+    "expected": "7bca51f180741403d75109cf6a1027406e502b66ffb4083e7309a962e95c70be",
+    "seconds": 0.01458242000080645,
+    "stderr": "RSS_KB=7112\n",
+    "sha256": "7bca51f180741403d75109cf6a1027406e502b66ffb4083e7309a962e95c70be"
+  },
+  {
+    "track": "b",
+    "case": "skewed-sets",
+    "expected": "44dd12927de06c07f83d352ca31ff5f84f88bcf78a41e29c93d0c07531cba641",
+    "seconds": 0.010338805999708711,
+    "stderr": "RSS_KB=9228\n",
+    "sha256": "44dd12927de06c07f83d352ca31ff5f84f88bcf78a41e29c93d0c07531cba641"
+  },
+  {
+    "track": "b",
+    "case": "dictionary-growth",
+    "expected": "47f693d15a1047f995e60e49feabae26c7b633ccea63722d9ddc3817769455cb",
+    "seconds": 0.06111463099841785,
+    "stderr": "RSS_KB=63364\n",
+    "sha256": "47f693d15a1047f995e60e49feabae26c7b633ccea63722d9ddc3817769455cb"
+  },
+  {
+    "track": "c",
+    "case": "partition-overflow",
+    "expected": "65b1f9f7885f3405330e04c18df10def077292e6b5f0c8721e25f004ee56897e",
+    "seconds": 0.008247181000115233,
+    "stderr": "RSS_KB=20564\n",
+    "sha256": "65b1f9f7885f3405330e04c18df10def077292e6b5f0c8721e25f004ee56897e"
+  }
+]

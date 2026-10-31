@@ -1,0 +1,74 @@
+[
+  {
+    "seconds": 0.0847155820010812,
+    "stderr": "RSS_KB=292344\n",
+    "sha256": "814e48bfa78e47ac51bf62be05e27b1855269673779d5dda233bd6347f0e776c",
+    "track": "a",
+    "dataset": "full-seed20261031",
+    "expected": "814e48bfa78e47ac51bf62be05e27b1855269673779d5dda233bd6347f0e776c",
+    "passed": true
+  },
+  {
+    "seconds": 0.08442178599943873,
+    "stderr": "RSS_KB=292176\n",
+    "sha256": "814e48bfa78e47ac51bf62be05e27b1855269673779d5dda233bd6347f0e776c",
+    "track": "a",
+    "dataset": "full-seed20261031",
+    "expected": "814e48bfa78e47ac51bf62be05e27b1855269673779d5dda233bd6347f0e776c",
+    "passed": true
+  },
+  {
+    "seconds": 0.5689738479995867,
+    "stderr": "RSS_KB=493512\n",
+    "sha256": "d9aca5145790528d1dafa51998c4e6e7b106bd9c9592962caecb2600199963e3",
+    "track": "b",
+    "dataset": "full-seed20261031",
+    "expected": "d9aca5145790528d1dafa51998c4e6e7b106bd9c9592962caecb2600199963e3",
+    "passed": true
+  },
+  {
+    "seconds": 0.5688744090002729,
+    "stderr": "RSS_KB=493488\n",
+    "sha256": "d9aca5145790528d1dafa51998c4e6e7b106bd9c9592962caecb2600199963e3",
+    "track": "b",
+    "dataset": "full-seed20261031",
+    "expected": "d9aca5145790528d1dafa51998c4e6e7b106bd9c9592962caecb2600199963e3",
+    "passed": true
+  },
+  {
+    "seconds": 0.1254786220015376,
+    "stderr": "RSS_KB=217680\n",
+    "sha256": "50cf41d11da645bb40d6fc4924b2b158c0f7c1052da8661297f02c50dd7cd15e",
+    "track": "c",
+    "dataset": "full-seed20261031",
+    "expected": "50cf41d11da645bb40d6fc4924b2b158c0f7c1052da8661297f02c50dd7cd15e",
+    "passed": true
+  },
+  {
+    "seconds": 0.10236549100045522,
+    "stderr": "RSS_KB=217672\n",
+    "sha256": "50cf41d11da645bb40d6fc4924b2b158c0f7c1052da8661297f02c50dd7cd15e",
+    "track": "c",
+    "dataset": "full-seed20261031",
+    "expected": "50cf41d11da645bb40d6fc4924b2b158c0f7c1052da8661297f02c50dd7cd15e",
+    "passed": true
+  },
+  {
+    "seconds": 0.7574952880004275,
+    "stderr": "RSS_KB=662072\n",
+    "sha256": "64f1981215abee6e01332dd548fd39a3da89e9e1f99a0687d85bfe6f3eca3c58",
+    "track": "d",
+    "dataset": "full-seed20261031",
+    "expected": "64f1981215abee6e01332dd548fd39a3da89e9e1f99a0687d85bfe6f3eca3c58",
+    "passed": true
+  },
+  {
+    "seconds": 0.7880433020000055,
+    "stderr": "RSS_KB=662032\n",
+    "sha256": "64f1981215abee6e01332dd548fd39a3da89e9e1f99a0687d85bfe6f3eca3c58",
+    "track": "d",
+    "dataset": "full-seed20261031",
+    "expected": "64f1981215abee6e01332dd548fd39a3da89e9e1f99a0687d85bfe6f3eca3c58",
+    "passed": true
+  }
+]

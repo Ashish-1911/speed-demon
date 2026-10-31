@@ -1,0 +1,100 @@
+[
+  {
+    "name": "d-sparse",
+    "rep": 0,
+    "seconds": 0.7639385729999049,
+    "stderr": "RSS_KB=413248\n",
+    "sha256": "a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e"
+  },
+  {
+    "name": "d-reuse",
+    "rep": 0,
+    "seconds": 0.7562777670009382,
+    "stderr": "RSS_KB=352844\n",
+    "sha256": "a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e"
+  },
+  {
+    "name": "d-reuse",
+    "rep": 1,
+    "seconds": 0.6934304709993739,
+    "stderr": "RSS_KB=356568\n",
+    "sha256": "a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e"
+  },
+  {
+    "name": "d-sparse",
+    "rep": 1,
+    "seconds": 0.6891831699995237,
+    "stderr": "RSS_KB=413248\n",
+    "sha256": "a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e"
+  },
+  {
+    "name": "d-sparse",
+    "rep": 2,
+    "seconds": 0.7094971630012878,
+    "stderr": "RSS_KB=413044\n",
+    "sha256": "a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e"
+  },
+  {
+    "name": "d-reuse",
+    "rep": 2,
+    "seconds": 0.6878885080004693,
+    "stderr": "RSS_KB=346956\n",
+    "sha256": "a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e"
+  },
+  {
+    "name": "d-reuse",
+    "rep": 3,
+    "seconds": 0.6979953689988179,
+    "stderr": "RSS_KB=356608\n",
+    "sha256": "a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e"
+  },
+  {
+    "name": "d-sparse",
+    "rep": 3,
+    "seconds": 0.6942087749994243,
+    "stderr": "RSS_KB=412928\n",
+    "sha256": "a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e"
+  },
+  {
+    "name": "d-sparse",
+    "rep": 4,
+    "seconds": 0.7161826789997576,
+    "stderr": "RSS_KB=413248\n",
+    "sha256": "a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e"
+  },
+  {
+    "name": "d-reuse",
+    "rep": 4,
+    "seconds": 0.70980544700069,
+    "stderr": "RSS_KB=340716\n",
+    "sha256": "a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e"
+  },
+  {
+    "name": "d-reuse",
+    "rep": 5,
+    "seconds": 0.6870470920002845,
+    "stderr": "RSS_KB=348072\n",
+    "sha256": "a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e"
+  },
+  {
+    "name": "d-sparse",
+    "rep": 5,
+    "seconds": 0.716354713000328,
+    "stderr": "RSS_KB=413084\n",
+    "sha256": "a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e"
+  },
+  {
+    "name": "d-sparse",
+    "rep": 6,
+    "seconds": 0.6982657529988501,
+    "stderr": "RSS_KB=413256\n",
+    "sha256": "a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e"
+  },
+  {
+    "name": "d-reuse",
+    "rep": 6,
+    "seconds": 0.7381680519993097,
+    "stderr": "RSS_KB=356712\n",
+    "sha256": "a23dbdf0a3e49cc8901310a9ee1dc6a9a569a85297b6da75c2a7002cb2ed277e"
+  }
+]

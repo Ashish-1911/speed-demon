@@ -1,0 +1,100 @@
+[
+  {
+    "name": "b-base",
+    "rep": 0,
+    "seconds": 0.6458158280001953,
+    "stderr": "RSS_KB=497808\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-gallop",
+    "rep": 0,
+    "seconds": 0.5265882179992332,
+    "stderr": "RSS_KB=498124\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-gallop",
+    "rep": 1,
+    "seconds": 0.5627369889989495,
+    "stderr": "RSS_KB=498128\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-base",
+    "rep": 1,
+    "seconds": 0.6892727069989633,
+    "stderr": "RSS_KB=498284\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-base",
+    "rep": 2,
+    "seconds": 0.6839671279994946,
+    "stderr": "RSS_KB=497804\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-gallop",
+    "rep": 2,
+    "seconds": 0.5562790779986244,
+    "stderr": "RSS_KB=498088\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-gallop",
+    "rep": 3,
+    "seconds": 0.5692678010000236,
+    "stderr": "RSS_KB=497904\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-base",
+    "rep": 3,
+    "seconds": 0.6503399980010727,
+    "stderr": "RSS_KB=497900\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-base",
+    "rep": 4,
+    "seconds": 0.6740842439994594,
+    "stderr": "RSS_KB=498012\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-gallop",
+    "rep": 4,
+    "seconds": 0.5796556179993786,
+    "stderr": "RSS_KB=498092\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-gallop",
+    "rep": 5,
+    "seconds": 0.6538174240013177,
+    "stderr": "RSS_KB=497552\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-base",
+    "rep": 5,
+    "seconds": 0.7286120359985944,
+    "stderr": "RSS_KB=498092\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-base",
+    "rep": 6,
+    "seconds": 0.6850525099998777,
+    "stderr": "RSS_KB=498088\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-gallop",
+    "rep": 6,
+    "seconds": 0.574649842999861,
+    "stderr": "RSS_KB=498152\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  }
+]

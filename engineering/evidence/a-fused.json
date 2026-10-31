@@ -1,0 +1,100 @@
+[
+  {
+    "name": "a-base",
+    "rep": 0,
+    "seconds": 0.09708609500012244,
+    "stderr": "RSS_KB=301296\n",
+    "sha256": "495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3"
+  },
+  {
+    "name": "a-fused",
+    "rep": 0,
+    "seconds": 0.08062384400000155,
+    "stderr": "RSS_KB=300988\n",
+    "sha256": "495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3"
+  },
+  {
+    "name": "a-fused",
+    "rep": 1,
+    "seconds": 0.08468420700046408,
+    "stderr": "RSS_KB=301340\n",
+    "sha256": "495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3"
+  },
+  {
+    "name": "a-base",
+    "rep": 1,
+    "seconds": 0.09079680199829454,
+    "stderr": "RSS_KB=301344\n",
+    "sha256": "495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3"
+  },
+  {
+    "name": "a-base",
+    "rep": 2,
+    "seconds": 0.09108658299919625,
+    "stderr": "RSS_KB=301164\n",
+    "sha256": "495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3"
+  },
+  {
+    "name": "a-fused",
+    "rep": 2,
+    "seconds": 0.07973096599926066,
+    "stderr": "RSS_KB=301156\n",
+    "sha256": "495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3"
+  },
+  {
+    "name": "a-fused",
+    "rep": 3,
+    "seconds": 0.07693117500093649,
+    "stderr": "RSS_KB=301344\n",
+    "sha256": "495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3"
+  },
+  {
+    "name": "a-base",
+    "rep": 3,
+    "seconds": 0.08263551399977587,
+    "stderr": "RSS_KB=301488\n",
+    "sha256": "495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3"
+  },
+  {
+    "name": "a-base",
+    "rep": 4,
+    "seconds": 0.085049755,
+    "stderr": "RSS_KB=301324\n",
+    "sha256": "495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3"
+  },
+  {
+    "name": "a-fused",
+    "rep": 4,
+    "seconds": 0.07818443100040895,
+    "stderr": "RSS_KB=301288\n",
+    "sha256": "495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3"
+  },
+  {
+    "name": "a-fused",
+    "rep": 5,
+    "seconds": 0.08549759199922846,
+    "stderr": "RSS_KB=301332\n",
+    "sha256": "495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3"
+  },
+  {
+    "name": "a-base",
+    "rep": 5,
+    "seconds": 0.08883857300133968,
+    "stderr": "RSS_KB=301336\n",
+    "sha256": "495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3"
+  },
+  {
+    "name": "a-base",
+    "rep": 6,
+    "seconds": 0.0840900570001395,
+    "stderr": "RSS_KB=300860\n",
+    "sha256": "495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3"
+  },
+  {
+    "name": "a-fused",
+    "rep": 6,
+    "seconds": 0.082334302000163,
+    "stderr": "RSS_KB=301344\n",
+    "sha256": "495ca09682b9673ef836a506496177680bb4a3af54255174befddb1f83481cd3"
+  }
+]

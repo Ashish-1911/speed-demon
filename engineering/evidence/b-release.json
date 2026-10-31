@@ -1,0 +1,100 @@
+[
+  {
+    "name": "b-base",
+    "rep": 0,
+    "seconds": 1.173464776999026,
+    "stderr": "RSS_KB=498088\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-release",
+    "rep": 0,
+    "seconds": 0.8836807949992362,
+    "stderr": "RSS_KB=495744\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-release",
+    "rep": 1,
+    "seconds": 0.8675783800008503,
+    "stderr": "RSS_KB=496044\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-base",
+    "rep": 1,
+    "seconds": 1.1281333389997599,
+    "stderr": "RSS_KB=497980\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-base",
+    "rep": 2,
+    "seconds": 1.1935852240003442,
+    "stderr": "RSS_KB=497732\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-release",
+    "rep": 2,
+    "seconds": 0.9149565239986259,
+    "stderr": "RSS_KB=495788\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-release",
+    "rep": 3,
+    "seconds": 0.9089575660000264,
+    "stderr": "RSS_KB=495852\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-base",
+    "rep": 3,
+    "seconds": 1.1042737859988847,
+    "stderr": "RSS_KB=498084\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-base",
+    "rep": 4,
+    "seconds": 1.049251312000706,
+    "stderr": "RSS_KB=498276\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-release",
+    "rep": 4,
+    "seconds": 0.8421525890007615,
+    "stderr": "RSS_KB=496044\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-release",
+    "rep": 5,
+    "seconds": 0.8524124860014126,
+    "stderr": "RSS_KB=496040\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-base",
+    "rep": 5,
+    "seconds": 1.0379914059994917,
+    "stderr": "RSS_KB=497744\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-base",
+    "rep": 6,
+    "seconds": 1.1153138179997768,
+    "stderr": "RSS_KB=497984\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  },
+  {
+    "name": "b-release",
+    "rep": 6,
+    "seconds": 0.8652246880010352,
+    "stderr": "RSS_KB=495852\n",
+    "sha256": "f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927"
+  }
+]
