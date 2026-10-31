@@ -52,7 +52,7 @@ static inline uint64_t fnv1a(const char* data, size_t len) {
     return h ? h : 1;
 }
 
-struct alignas(64) Slot {
+struct Slot {
     uint64_t hash = 0;
     const char* ptr = nullptr;
     uint32_t len = 0;

@@ -53,3 +53,14 @@ Every step from the reference to your final version, each with the live-board ru
     - Peak memory projected to drop from **36.05 MB to ~19.3 MB** (**-46% memory reduction**).
     - Source lines unchanged at 425 lines. Dependencies: 1.
     - All 14 official adversarial unit tests and multi-scale correctness suites pass 100% byte-identically.
+
+
+## October 31 controlled campaign
+
+Baseline source: `a3ab590f3dfe59eaa69afdc0fd8094814dfdd573`. Historical best: `run-aafec280a0db`, T=0.131756 s, M=21676032 bytes, S=502, D=1, K=14.64562, 58.285388 points. Latest baseline-tree run: `run-aafec280a0db`, 58.285388 points. Historical best and latest are distinct measurements.
+
+Experiment: **Remove per-slot cache-line padding; retain aligned partition locks and exact overflow**. Seven alternating local process runs on WSL i7-13650HX, GCC 15.2, `-O3 -flto -march=haswell -pthread`, input/output on Linux tmpfs: median 0.100837 -> 0.096994 s (3.8% reduction). Raw measurements: `engineering/evidence/c-compact.json` under engineering/evidence. These are not official times. GNU time RSS includes mapped input pages; it is not the board memory axis.
+
+All existing tiny/sample/full seed-1 and sample seeds 42/99 outputs matched reference SHA-256. Offline Docker check passed full seed 1 with allowlisted images and the 8 GiB sandbox. ASan/UBSan and TSan tiny runs passed. Fresh full-scale and targeted test details are recorded in the campaign evidence.
+
+Correction to older occupancy discussion: seed-1 occupancy does not prove holdout safety. Bounded probing plus exact overflow handles saturation; a 350-name single-partition test passes. Stored escaped name interiors are an injective representation under the frozen spec: all nonempty names are quoted, and each literal quote has exactly one doubled encoding. Empty quoted/unquoted names share length zero. Equality is always byte-checked.
