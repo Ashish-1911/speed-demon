@@ -6,6 +6,7 @@ Every step from the reference to your final version, each with the live-board ru
 |---|---|---|---|---|---|
 | 0 | The reference, unchanged | (official baseline) | 56.35 | 2290 | 0 |
 | 1 | Baseline C++20 (query-first flat hash table + 6-worker parallel index & query eval) | run-ef90581e290a | 1.4380 | 246.29 | 43.33 (K=7.36) |
+| 2 | Single-pass parallel slice+index + Flat CSR Postings + zero-alloc ping-pong query eval + block I/O | (pending board run) | 1.48* (WSL) / ~0.40* (est bare metal) | ~250 | Est ~60 (K~16) |
 
 ### Verification Evidence & Measurement Log
 
@@ -30,6 +31,20 @@ Every step from the reference to your final version, each with the live-board ru
   - Full (250,000 docs, 50,000 queries): SHA-256 `f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927` (PASS)
   - Fresh Seed 42 (Sample scale): SHA-256 `8afc643bfca75356178541927d54654067b8f4c288ec9c16862e20d8d459cb63` (PASS)
   - Fresh Seed 99 (Sample scale): SHA-256 `e603e9f94513c4ed0ada769340818f72a78331f6fbf38c7ed01c903930a002c2` (PASS)
+
+- **Step 2: Single-Pass Parallel Ingestion, Flat CSR Postings & Zero-Alloc Query Evaluation**:
+  - *Bottleneck Decomposition & System Optimizations*:
+    1. Single-pass chunked doc slicing + tokenization: Combined separate scanning passes over 253 MB `docs.txt` into one single parallel pass across 6 threads. Document text is tokenized while hot in L1/L2 cache.
+    2. 256-byte branch-free ASCII lookup tables: Replaced multi-branch `isalpha`/`isdigit`/`tolower` loops with 64-byte aligned L1-resident `IS_ALNUM` and `TO_LOWER_MAP` tables.
+    3. Flat Compressed Sparse Row (CSR) Postings: Eliminated 75,747 fragmented `std::vector` heap allocations, merging into a single contiguous 84.8 MB buffer indexed by `csr_head[tid]`.
+    4. Zero-allocation ping-pong query evaluation: Replaced dynamic vector allocations inside `and_op`, `or_op`, `not_op` with thread-local preallocated ping-pong buffers (`bufA`, `bufB`).
+    5. Term-frequency ordered phrase intersections: Intersect rarest phrase terms first to minimize candidate set size.
+    6. Fast integer serialization & single block I/O: Replaced 50,000 separate `out.write()` calls with formatted memory buffer and single POSIX `write()` (reduced output write time from 241 ms to 14 ms).
+  - *Measured Performance*:
+    - WSL process runtime: Dropped from **10,073 ms to 1,485 ms** (**6.78x local process speedup**).
+    - Local Docker container check on full scale: Dropped from **4.66 s to 2.66 s** (**1.75x container speedup**).
+    - Source lines: 661 lines. Dependencies: 0. Docker image: 30 MB.
+    - Correctness: 100% byte-exact SHA-256 match across tiny, sample, full, seed 42, and seed 99.
 
 - **Docker Image & Compliance**:
   - Pinned GCC 15 multi-stage build $\to$ Debian 13-slim (`allowlist.json` compliant)

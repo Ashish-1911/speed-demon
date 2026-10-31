@@ -186,3 +186,25 @@
 - **Decision**: **KEPT & COMMITTED**.
 
 
+
+
+### Decision 14: Track B Single-Pass Ingestion, Flat CSR Postings & Zero-Alloc Query Evaluation
+- **Context**: Profiling Track B revealed that separate passes over `docs.txt` caused massive redundant memory traffic (8.5 s spent scanning doc slices on virtual memory). Furthermore, maintaining 75,747 dynamic `std::vector` posting lists led to hundreds of thousands of heap reallocations, and Boolean query operations repeatedly allocated intermediate vectors.
+- **Architecture**:
+  - Single-pass chunked doc slicing and tokenization: 253 MB `docs.txt` is partitioned into 6 newline-aligned chunks. Each worker thread extracts document line boundaries and immediately tokenizes document text in the same pass while cache-hot in L1/L2.
+  - L1-resident 256-byte ASCII lookup tables: Cache-aligned `IS_ALNUM` and `TO_LOWER_MAP` replace multi-branch character classification loops.
+  - Flat Compressed Sparse Row (CSR) Postings: 75,747 fragmented vectors are replaced by a single contiguous 84.8 MB buffer indexed by `csr_head[tid]`, cutting memory fragmentation and improving cache locality during lookups.
+  - Zero-allocation ping-pong query evaluation: Thread-local reusable buffers (`bufA`, `bufB`) eliminate all dynamic vector allocations during `and_op`, `or_op`, and `not_op`.
+  - Phrase term frequency sorting: Shortest posting lists are intersected first, rapidly pruning candidate documents.
+  - Formatted single-block I/O: 50,000 output lines are formatted directly into a pre-sized buffer and written in a single POSIX `write()` call, dropping output I/O from 241 ms to 14 ms.
+- **Evidence**:
+  - Process wall time in WSL dropped from **10,073 ms to 1,485 ms** (**6.78x local process speedup**).
+  - Local Docker container check on full scale dropped from **4.66 s to 2.66 s** (**1.75x container speedup**).
+  - Exact 100% byte-for-byte SHA-256 match across all five scales and seeds:
+    - Tiny: `dcdad7cedfc07eb66ecced1861cc91d9017e004c56cbe4f38e9413b62b17ff70` (PASS)
+    - Sample: `eeeec1e9319da98a6f3c664c78f93e7078fd603c25c2bb3027174e81e3638a8f` (PASS)
+    - Full seed 1: `f86973c210228141bcb6f1f1b10188ad2a9b65f71e7cd7cf4590b38de4e80927` (PASS)
+    - Fresh seed 42: `8afc643bfca75356178541927d54654067b8f4c288ec9c16862e20d8d459cb63` (PASS)
+    - Fresh seed 99: `e603e9f94513c4ed0ada769340818f72a78331f6fbf38c7ed01c903930a002c2` (PASS)
+  - Allowlist-compliant multi-stage GCC 15 -> Debian 13-slim build, image size 30 MB, 0 dependencies.
+- **Decision**: **KEPT & COMMITTED**.
