@@ -168,7 +168,8 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    constexpr size_t workers = 12;
+    // Six physical P-cores
+    constexpr size_t workers = 6;
     std::vector<const char*> chunk_starts(workers);
     std::vector<const char*> chunk_ends(workers);
 

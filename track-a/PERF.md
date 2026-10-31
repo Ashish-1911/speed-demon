@@ -80,6 +80,8 @@ All existing tiny/sample/full seed-1 and sample seeds 42/99 outputs matched refe
 
 Commit `ccdbb2a64b0b6335df8709a03c9d68834443fc8f`, run `run-6aa7f879d0cd`: T=0.106657 s, M=69038080 bytes, S=399, D=1, K=16.396307, **60.737302 machine points**. Every official gate passed. This supersedes the local projections for the selected changes.
 
-### Phase III local experiment
+### Phase III local experiment (rejected)
 
 The worker-count candidate increased the parser/reduction workers from 6 to 12. On eight alternating full-dataset runs using GCC 15.2, `-O3 -flto -march=haswell -pthread`, median local wall time changed from **0.743 s to 0.605 s**; median RSS changed from **300,934 KB to 342,070 KB**. Tiny, sample, seed 42, seed 99 and full output hashes matched the recorded reference hashes. The change is integrated pending an official liveboard run; the Docker checker could not run because Docker is unavailable in the current WSL environment.
+
+Official run `run-b68c2aba294b` for commit `1b99e94d1525f3a02dfdf1641e1d23afff4c1e72` passed every gate but measured `T=0.106818 s`, `M=112234496 bytes`, `K=14.866576`, and **58.610548 points**. The memory increase outweighed the local runtime gain, so production remains at six workers and the prior official run `run-6aa7f879d0cd` remains the Track A best.

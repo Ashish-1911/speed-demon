@@ -23,10 +23,12 @@ Best-three geometric mean: `57.312932` machine points (A/C/D). Live board snapsh
 - Track D minimum-priority frontier expansion was exact but substantially slower and used much more memory; rejected.
 - Track D cached radix-queue top candidate was locally positive but remains unintegrated pending complete validation and official scoring.
 - Track C repeated-name/country cache was byte-exact with unchanged RSS but only a noisy ~1% local improvement; rejected.
-- Track A 12-worker candidate is integrated after eight alternating full-data runs: median local time improved from 0.743 s to 0.605 s, with RSS increasing from 300,934 KB to 342,070 KB. Tiny, sample, seed 42, seed 99 and full hashes passed.
+- Track A 12-worker candidate was locally faster after eight alternating full-data runs, but its official score regressed; it is rejected and six workers are restored.
+- Official A run `run-b68c2aba294b` for `1b99e94` passed all gates but regressed to 58.610548 points (`T=0.106818`, `M=112234496`, `K=14.866576`); six workers restored.
+- Track D cached queue-top candidate was exact but only ~0.7% faster over eight alternating local runs with similar RSS; rejected.
 
 ## Outstanding
 
 - Preserve unrelated untracked `DEMO-CV-017-unsigned-demo-passport.json` and `scratch/`.
 - Docker checker is currently blocked because Docker is unavailable in WSL.
-- Next: obtain an official A run for the 12-worker candidate, then decide whether to validate/integrate the D queue-top candidate.
+- Next: push the restored six-worker A baseline, then pursue only a materially stronger D or C candidate.
