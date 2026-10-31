@@ -1,7 +1,7 @@
 # Speed Demon Phase III Handoff
 
 - Branch: `speed-demon`
-- Checkpoint commit: `0c5f0e6` (refresh after this checkpoint is committed)
+- Checkpoint commit: `ba07f44` (refresh after this checkpoint is committed)
 - Official scored source baseline: `ccdbb2a64b0b6335df8709a03c9d68834443fc8f`
 - Rollback tag: `astro-scored-ccdbb2a`
 - Experiment branch: `exp/phase2`
@@ -15,7 +15,9 @@
 | C | `run-44bf4f0a8ed0` | 0.130768 | 18784256 | 502 | 15.127926 | 58.988969 |
 | D | `run-b50731622d5a` | 0.493443 | 253067264 | 426 | 11.072623 | 52.212525 |
 
-Best-three geometric mean: `57.312932` machine points (A/C/D). Live board snapshot still reports rank 61 and fifth place `76.361508`.
+Best-three A/C/D geometric mean: `57.191787` machine points. Live board snapshot previously reported rank 61 and fifth place `76.361508`.
+
+The 2026-10-31T17:30:58Z board snapshot confirms the same A/C/D best runs, rank 61, and a current fifth-place portfolio of `76.421636`; the current A/C/D geometric mean is `57.191787`, leaving a `19.229849` gap.
 
 ## Phase III findings
 
@@ -31,4 +33,6 @@ Best-three geometric mean: `57.312932` machine points (A/C/D). Live board snapsh
 
 - Preserve unrelated untracked `DEMO-CV-017-unsigned-demo-passport.json` and `scratch/`.
 - Docker checker is currently blocked because Docker is unavailable in WSL.
-- Next: push the restored six-worker A baseline, then pursue only a materially stronger D or C candidate.
+- Windows Docker CLI is present but the Docker Desktop Linux engine is not running; WSL exposes the CLI path but no usable daemon.
+- Restored six-worker A baseline is published as `ba07f44`; no production source change remains pending.
+- No materially stronger D or C candidate was found in this pass; the queue-top D cache and repeated-name C cache remain rejected.
