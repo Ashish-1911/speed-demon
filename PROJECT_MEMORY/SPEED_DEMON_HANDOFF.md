@@ -1,7 +1,7 @@
 # Speed Demon Phase II Handoff
 
 - Branch: `speed-demon`
-- Current HEAD: `23d1a78be645c563616e9fa21b5e080d0b82456c`
+- Checkpoint commit: `c506efe` (refresh this line only when checkpoint content changes)
 - Official scored source baseline: `ccdbb2a64b0b6335df8709a03c9d68834443fc8f`
 - Rollback tag: `astro-scored-ccdbb2a`
 - Experiment branch: `exp/phase2`
