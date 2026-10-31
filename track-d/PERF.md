@@ -50,3 +50,16 @@ Every step from the reference to your final version, each with the live-board ru
   - Fresh seed 777 (Sample scale, on-the-fly generated): `c941014791da5ac215bfdd01235dd6b67fe5325c4067d907977cdcf4da9c809b` (PASS)
   - All 14 test suites in `official/tests/test_d_traverse.py`: PASS
   - Docker Container Check (`check.py` on full scale): PASS (1.81 s, image 30 MB, all FROM allowlisted)
+
+
+## October 31 controlled campaign
+
+Baseline source: `a3ab590f3dfe59eaa69afdc0fd8094814dfdd573`. Historical best: `run-8484c76cbe41`, T=0.585252 s, M=566702080 bytes, S=411, D=1, K=8.699793, 46.975447 points. Latest baseline-tree run: `run-8484c76cbe41`, 46.975447 points. Historical best and latest are distinct measurements.
+
+Experiment: **64-bit monotone radix queues for bidirectional Dijkstra**. Seven alternating local process runs on WSL i7-13650HX, GCC 15.2, `-O3 -flto -march=haswell -pthread`, input/output on Linux tmpfs: median 0.538744 -> 0.477418 s (11.4% reduction). Raw measurements: `engineering/evidence/d-radix.json` under engineering/evidence. These are not official times. GNU time RSS includes mapped input pages; it is not the board memory axis.
+
+All existing tiny/sample/full seed-1 and sample seeds 42/99 outputs matched reference SHA-256. Offline Docker check passed full seed 1 with allowlisted images and the 8 GiB sandbox. ASan/UBSan and TSan tiny runs passed. Fresh full-scale and targeted test details are recorded in the campaign evidence.
+
+Correction to Step 7 projection: actual run `run-8484c76cbe41` scored 46.975447, T=0.585252 s, M=566702080, S=411, D=1, K=8.699793. The earlier >50 estimate was not achieved. Lazy distance initialization was rejected (0.542397 -> 0.546646 s, no RSS reduction). Worker-count screening was inconclusive on K and partly overlapped correctness work; no worker-count change was accepted. Radix-heap rationale: https://www.princeton.edu/~alaink/Orf467F11/AhujaRadixHeap.pdf . Nonnegative weights preserve monotone insertion independently in each search direction; stale entries and lower-bound stopping remain unchanged.
+
+Second and third isolated passes: sparse per-query states keyed by vertex (with growing exact hash table), followed by reuse of dead degree arrays as scatter cursors. All offsets are prepared and joined before scatter starts; workers then own disjoint CSR spans and separate cursor rows. Comparisons in `engineering/evidence/d-sparse.json` and `engineering/evidence/d-reuse.json` must be read within each alternating-run window. Local RSS falls from approximately 662 MB to 340?357 MB. The earlier 16-bit epoch is replaced by a 32-bit state generation with explicit wrap clearing. Final canonical S=426, D=1.

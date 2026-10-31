@@ -6,6 +6,8 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <array>
+#include <bit>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -69,64 +71,61 @@ struct Edge {
     uint32_t w;
 };
 
+// Monotone integer queue: nonnegative edge weights never insert below last.
+// All priorities remain 64-bit, including the highest radix bucket.
 template<typename T, typename Priority = uint64_t>
-struct QuaternaryHeap {
-    struct Entry {
-        Priority priority;
-        T value;
-    };
-    std::vector<Entry> data;
-
-    void clear() { data.clear(); }
-    bool empty() const { return data.empty(); }
-    size_t size() const { return data.size(); }
-    const Entry& top() const { return data.front(); }
-
-    void push(Priority p, T v) {
-        data.push_back({p, v});
-        sift_up(data.size() - 1);
-    }
-
-    Entry pop() {
-        Entry top_elem = data.front();
-        if (data.size() > 1) {
-            data.front() = data.back();
-            data.pop_back();
-            sift_down(0);
-        } else {
-            data.pop_back();
+struct RadixHeap {
+    struct Entry { Priority priority; T value; };
+    std::array<std::vector<Entry>, 65> buckets;
+    Priority last = 0;
+    size_t count = 0;
+    static unsigned bucket(Priority x) { return std::bit_width(x); }
+    void clear() { for (auto& b : buckets) b.clear(); last = 0; count = 0; }
+    bool empty() const { return count == 0; }
+    size_t size() const { return count; }
+    void push(Priority p, T v) { buckets[bucket(p ^ last)].push_back({p,v}); ++count; }
+    const Entry& top() {
+        if (buckets[0].empty()) {
+            unsigned i = 1;
+            while (buckets[i].empty()) ++i;
+            last = UINT64_MAX;
+            for (const auto& e : buckets[i]) last = std::min(last, e.priority);
+            for (const auto& e : buckets[i]) buckets[bucket(e.priority ^ last)].push_back(e);
+            buckets[i].clear();
         }
-        return top_elem;
+        return buckets[0].back();
     }
+    Entry pop() { Entry e = top(); buckets[0].pop_back(); --count; return e; }
+};
 
-private:
-    void sift_up(size_t i) {
-        while (i > 0) {
-            size_t parent = (i - 1) / 4;
-            if (data[i].priority < data[parent].priority) {
-                std::swap(data[i], data[parent]);
-                i = parent;
-            } else break;
+
+struct QueryState {
+    struct Value { uint32_t node = 0, stamp = 0; uint64_t f, b; };
+    std::vector<Value> slots = std::vector<Value>(1024);
+    uint32_t epoch = 0;
+    size_t used = 0;
+    void clear() {
+        used = 0;
+        if (++epoch == 0) {
+            for (auto& s : slots) s.stamp = 0;
+            epoch = 1;
         }
     }
-
-    void sift_down(size_t i) {
-        const size_t n = data.size();
-        while (true) {
-            size_t best = i;
-            Priority best_p = data[i].priority;
-            size_t child = 4 * i + 1;
-            for (size_t k = 0; k < 4 && child + k < n; ++k) {
-                if (data[child + k].priority < best_p) {
-                    best = child + k;
-                    best_p = data[child + k].priority;
-                }
-            }
-            if (best != i) {
-                std::swap(data[i], data[best]);
-                i = best;
-            } else break;
+    Value& get(uint32_t node) {
+        if ((used + 1) * 2 > slots.size()) {
+            auto old = std::move(slots);
+            slots = std::vector<Value>(old.size() * 2);
+            used = 0;
+            for (auto& s : old) if (s.stamp == epoch) get(s.node) = s;
         }
+        size_t i = (node * 2654435761u) & (slots.size() - 1);
+        while (slots[i].stamp == epoch && slots[i].node != node)
+            i = (i + 1) & (slots.size() - 1);
+        if (slots[i].stamp != epoch) {
+            slots[i] = {node, epoch, UINT64_MAX, UINT64_MAX};
+            ++used;
+        }
+        return slots[i];
     }
 };
 
@@ -228,6 +227,26 @@ int main(int argc, char* argv[]) {
         r_head[i + 1] += r_head[i];
     }
 
+    // Convert counts to disjoint write cursors before any scatter can start.
+    // Each node belongs to one preparation worker; each scatter owns one row.
+    std::vector<std::thread> offset_threads;
+    for (int wid = 0; wid < parse_workers; ++wid) {
+        offset_threads.emplace_back([&, wid]() {
+            uint32_t begin = uint64_t(wid) * n / parse_workers;
+            uint32_t end = uint64_t(wid + 1) * n / parse_workers;
+            for (uint32_t u = begin; u < end; ++u) {
+                uint32_t f = head[u], r = r_head[u];
+                for (int w = 0; w < parse_workers; ++w) {
+                    uint32_t df = worker_deg_f[w][u + 1], dr = worker_deg_r[w][u + 1];
+                    worker_deg_f[w][u + 1] = f;
+                    worker_deg_r[w][u + 1] = r;
+                    f += df; r += dr;
+                }
+            }
+        });
+    }
+    for (auto& th : offset_threads) th.join();
+
     std::vector<Edge> edges(m);
     std::vector<Edge> r_edges(m);
 
@@ -235,22 +254,12 @@ int main(int argc, char* argv[]) {
     std::vector<std::thread> scatter_threads;
     for (int wid = 0; wid < parse_workers; ++wid) {
         scatter_threads.emplace_back([&, wid]() {
-            std::vector<uint32_t> wf(n);
-            std::vector<uint32_t> wr(n);
-            for (uint32_t u = 0; u < n; ++u) {
-                uint32_t off_f = head[u];
-                uint32_t off_r = r_head[u];
-                for (int w = 0; w < wid; ++w) {
-                    off_f += worker_deg_f[w][u + 1];
-                    off_r += worker_deg_r[w][u + 1];
-                }
-                wf[u] = off_f;
-                wr[u] = off_r;
-            }
+            auto& wf = worker_deg_f[wid];
+            auto& wr = worker_deg_r[wid];
             const auto& we = worker_edges[wid];
             for (const auto& e : we) {
-                edges[wf[e.u]++] = {e.v, e.w};
-                r_edges[wr[e.v]++] = {e.u, e.w};
+                edges[wf[e.u + 1]++] = {e.v, e.w};
+                r_edges[wr[e.v + 1]++] = {e.u, e.w};
             }
         });
     }
@@ -279,13 +288,10 @@ int main(int argc, char* argv[]) {
     std::atomic<size_t> query_idx{0};
 
     auto worker = [&]() {
-        std::vector<uint64_t> dist_f(n, UINT64_MAX);
-        std::vector<uint64_t> dist_b(n, UINT64_MAX);
-        std::vector<uint32_t> epoch_fb(n, 0);
-        uint16_t current_epoch = 0;
+        QueryState state;
 
-        QuaternaryHeap<uint32_t, uint64_t> pq_f;
-        QuaternaryHeap<uint32_t, uint64_t> pq_b;
+        RadixHeap<uint32_t, uint64_t> pq_f;
+        RadixHeap<uint32_t, uint64_t> pq_b;
 
         while (true) {
             size_t idx = query_idx.fetch_add(1, std::memory_order_relaxed);
@@ -298,13 +304,9 @@ int main(int argc, char* argv[]) {
                 continue;
             }
 
-            if (++current_epoch == 0) {
-                std::fill(epoch_fb.begin(), epoch_fb.end(), 0);
-                current_epoch = 1;
-            }
-
-            dist_f[s] = 0; epoch_fb[s] = (epoch_fb[s] & 0x0000FFFF) | (uint32_t(current_epoch) << 16);
-            dist_b[t] = 0; epoch_fb[t] = (epoch_fb[t] & 0xFFFF0000) | uint32_t(current_epoch);
+            state.clear();
+            state.get(s).f = 0;
+            state.get(t).b = 0;
 
             pq_f.clear(); pq_f.push(0, s);
             pq_b.clear(); pq_b.push(0, t);
@@ -314,15 +316,13 @@ int main(int argc, char* argv[]) {
             while (!pq_f.empty() && !pq_b.empty()) {
                 while (!pq_f.empty()) {
                     uint32_t u = pq_f.top().value;
-                    uint16_t ef = epoch_fb[u] >> 16;
-                    if (ef != current_epoch || pq_f.top().priority > dist_f[u]) {
+                    if (pq_f.top().priority > state.get(u).f) {
                         pq_f.pop();
                     } else break;
                 }
                 while (!pq_b.empty()) {
                     uint32_t u = pq_b.top().value;
-                    uint16_t eb = epoch_fb[u] & 0xFFFF;
-                    if (eb != current_epoch || pq_b.top().priority > dist_b[u]) {
+                    if (pq_b.top().priority > state.get(u).b) {
                         pq_b.pop();
                     } else break;
                 }
@@ -342,16 +342,13 @@ int main(int argc, char* argv[]) {
                         uint64_t nd = d + edges[e].w;
                         if (nd >= best) continue;
 
-                        uint32_t ep = epoch_fb[v];
-                        uint16_t ef = ep >> 16;
-                        uint16_t eb = ep & 0xFFFF;
+                        auto& st = state.get(v);
 
-                        if (ef != current_epoch || nd < dist_f[v]) {
-                            dist_f[v] = nd;
-                            epoch_fb[v] = (ep & 0x0000FFFF) | (uint32_t(current_epoch) << 16);
+                        if (nd < st.f) {
+                            st.f = nd;
                             pq_f.push(nd, v);
-                            if (eb == current_epoch && nd + dist_b[v] < best) {
-                                best = nd + dist_b[v];
+                            if (st.b != UINT64_MAX && nd + st.b < best) {
+                                best = nd + st.b;
                             }
                         }
                     }
@@ -363,16 +360,13 @@ int main(int argc, char* argv[]) {
                         uint64_t nd = d + r_edges[e].w;
                         if (nd >= best) continue;
 
-                        uint32_t ep = epoch_fb[v];
-                        uint16_t ef = ep >> 16;
-                        uint16_t eb = ep & 0xFFFF;
+                        auto& st = state.get(v);
 
-                        if (eb != current_epoch || nd < dist_b[v]) {
-                            dist_b[v] = nd;
-                            epoch_fb[v] = (ep & 0xFFFF0000) | uint32_t(current_epoch);
+                        if (nd < st.b) {
+                            st.b = nd;
                             pq_b.push(nd, v);
-                            if (ef == current_epoch && dist_f[v] + nd < best) {
-                                best = dist_f[v] + nd;
+                            if (st.f != UINT64_MAX && st.f + nd < best) {
+                                best = st.f + nd;
                             }
                         }
                     }
