@@ -11,7 +11,7 @@ Every step from the reference to your final version, each with the live-board ru
 | 4 | Exact Bidirectional Dijkstra + cache-aligned 4-ary heap + parallel CSR construction | run-b223180e56c9 | 0.6748 | 622.16 | 45.42 (K=8.10) |
 | 5 | Zero-temp parallel CSR + packed 32-bit epoch_fb + strict nd >= best heap pruning | run-1ea8409eec44 | 0.6954 | 503.60 | 45.64 (K=8.18) |
 | 6 | Fast-path CSR parser (skip weight parsing in Pass 1 + branchless digit scanning) | run-1471543ef2e2 | 0.6276 | 527.92 | 46.56 (K=8.53) |
-| 7 | Single-pass parallel CSR construction + thread-local scatter offsets (zero 2nd text pass, -118 ms build time) | (pending board run) | ~0.48 | ~450 | >50.0 (K>10.5) |
+| 7 | Single-pass parallel CSR construction + thread-local scatter offsets | run-8484c76cbe41 | 0.585252 | 566.702080 | 46.975447 (K=8.699793) |
 
 ### Verification Evidence & Measurement Log
 
@@ -63,3 +63,9 @@ All existing tiny/sample/full seed-1 and sample seeds 42/99 outputs matched refe
 Correction to Step 7 projection: actual run `run-8484c76cbe41` scored 46.975447, T=0.585252 s, M=566702080, S=411, D=1, K=8.699793. The earlier >50 estimate was not achieved. Lazy distance initialization was rejected (0.542397 -> 0.546646 s, no RSS reduction). Worker-count screening was inconclusive on K and partly overlapped correctness work; no worker-count change was accepted. Radix-heap rationale: https://www.princeton.edu/~alaink/Orf467F11/AhujaRadixHeap.pdf . Nonnegative weights preserve monotone insertion independently in each search direction; stale entries and lower-bound stopping remain unchanged.
 
 Second and third isolated passes: sparse per-query states keyed by vertex (with growing exact hash table), followed by reuse of dead degree arrays as scatter cursors. All offsets are prepared and joined before scatter starts; workers then own disjoint CSR spans and separate cursor rows. Comparisons in `engineering/evidence/d-sparse.json` and `engineering/evidence/d-reuse.json` must be read within each alternating-run window. Local RSS falls from approximately 662 MB to 340?357 MB. The earlier 16-bit epoch is replaced by a 32-bit state generation with explicit wrap clearing. Final canonical S=426, D=1.
+
+### Confirmed selected implementation
+
+Commit `ccdbb2a64b0b6335df8709a03c9d68834443fc8f`, run `run-b50731622d5a`: T=0.493443 s, M=253067264 bytes, S=426, D=1, K=11.072623, **52.212525 machine points**. Every official gate passed. This supersedes the local projections for the selected changes.
+
+Final two-pass raw-edge-elimination experiment was not selected: paired medians 0.551639 -> 0.545623 seconds, overlapping distributions, small RSS reduction. See engineering/evidence/d-twopass.json.

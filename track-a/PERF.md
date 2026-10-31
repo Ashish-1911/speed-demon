@@ -75,3 +75,7 @@ Baseline source: `a3ab590f3dfe59eaa69afdc0fd8094814dfdd573`. Historical best: `r
 Experiment: **Fuse endpoint scanning and hashing; create output for empty input**. Seven alternating local process runs on WSL i7-13650HX, GCC 15.2, `-O3 -flto -march=haswell -pthread`, input/output on Linux tmpfs: median 0.088839 -> 0.080624 s (9.2% reduction). Raw measurements: `engineering/evidence/a-fused.json` under engineering/evidence. These are not official times. GNU time RSS includes mapped input pages; it is not the board memory axis.
 
 All existing tiny/sample/full seed-1 and sample seeds 42/99 outputs matched reference SHA-256. Offline Docker check passed full seed 1 with allowlisted images and the 8 GiB sandbox. ASan/UBSan and TSan tiny runs passed. Fresh full-scale and targeted test details are recorded in the campaign evidence.
+
+### Confirmed selected implementation
+
+Commit `ccdbb2a64b0b6335df8709a03c9d68834443fc8f`, run `run-6aa7f879d0cd`: T=0.106657 s, M=69038080 bytes, S=399, D=1, K=16.396307, **60.737302 machine points**. Every official gate passed. This supersedes the local projections for the selected changes.

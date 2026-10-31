@@ -46,7 +46,7 @@ Every step from the reference to your final version, each with the live-board ru
     - Birthday-paradox spinlock collisions between 12 concurrent worker threads accounted for 26.6% of worker execution time.
   - *Optimization*:
     - Increased partition count from 512 to 1,024, cutting multi-threaded lock collision probability in half (from 12.2% down to 6.3%).
-    - Reduced partition slot capacity from 1,024 to 256. Distribution audit proved max distinct names in any partition is 172 (worst-case load factor 67.2%, average load factor 38.3%), completely avoiding overflow.
+    - Reduced partition slot capacity from 1,024 to 256. Public-seed occupancy audit observed a maximum of 172 distinct names per partition (67.2% load, average 38.3%). This is not a bound for unseen seeds; bounded probing and the exact overflow path are required.
     - Total dictionary heap allocation dropped from 33.5 MB to 16.7 MB (-16.8 MB reduction in process RAM).
   - *Measured Performance*:
     - End-to-end wall time on 12 threads dropped from **144.0 ms to 122.5 ms** (**-21.5 ms / 14.9% speedup**).
@@ -64,3 +64,7 @@ Experiment: **Remove per-slot cache-line padding; retain aligned partition locks
 All existing tiny/sample/full seed-1 and sample seeds 42/99 outputs matched reference SHA-256. Offline Docker check passed full seed 1 with allowlisted images and the 8 GiB sandbox. ASan/UBSan and TSan tiny runs passed. Fresh full-scale and targeted test details are recorded in the campaign evidence.
 
 Correction to older occupancy discussion: seed-1 occupancy does not prove holdout safety. Bounded probing plus exact overflow handles saturation; a 350-name single-partition test passes. Stored escaped name interiors are an injective representation under the frozen spec: all nonempty names are quoted, and each literal quote has exactly one doubled encoding. Empty quoted/unquoted names share length zero. Equality is always byte-checked.
+
+### Confirmed selected implementation
+
+Commit `ccdbb2a64b0b6335df8709a03c9d68834443fc8f`, run `run-44bf4f0a8ed0`: T=0.130768 s, M=18784256 bytes, S=502, D=1, K=15.127926, **58.988969 machine points**. Every official gate passed. This supersedes the local projections for the selected changes.

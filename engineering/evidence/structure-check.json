@@ -1,0 +1,12 @@
+{
+  "source": "engineering/d_structures.cpp",
+  "compiler": "GCC 15.2 -O1 -g -march=haswell -pthread -fsanitize=address,undefined -fno-pie -no-pie",
+  "exit_code": 0,
+  "stderr": "",
+  "cases": [
+    "100000 sparse-state growth/readbacks",
+    "forced uint32 epoch wrap",
+    "100000 queue operations vs std::priority_queue",
+    "full uint64 radix range"
+  ]
+}

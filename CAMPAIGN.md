@@ -54,3 +54,28 @@ B packs dictionary slots to 16 bytes and adds dynamic growth; final S=752. D rep
 | D | 0.848750 | 0.735739 | 426 |
 
 The late timing window is slower than the initial one; these matched pairs, not cross-window absolute times, are the release comparison. All final source paths passed full fresh seed 20261031.
+
+Additional structure-level ASan/UBSan check passed: 100,000 sparse-state insertions/readbacks, forced UINT32_MAX generation wrap, 100,000 randomized monotone-queue operations against std::priority_queue, and priorities 0, 2^63, UINT64_MAX.
+
+## Confirmed official release: ccdbb2a
+
+All four tracks passed check, build, correctness, timeout and sandbox. Data snapshot 2026-10-31T16:07:47Z. Dependency weight D=1 throughout. Memory is decimal MB below.
+
+| Track | Previous T / M / S / K | New T / M / S / K | Points before ? after | Time reduction | Official run |
+|---|---|---|---|---:|---|
+| A | 0.113310s / 68.870MB / 398 / 15.921413 | 0.106657s / 69.038MB / 399 / 16.396307 | 60.099081 ? 60.737302 | 5.87% | `run-6aa7f879d0cd` |
+| B | 0.846156s / 254.382MB / 722 / 9.208571 | 0.709844s / 251.884MB / 752 / 10.012471 | 48.209612 ? 50.027063 | 16.11% | `run-870bfa70b937` |
+| C | 0.131756s / 21.676MB / 502 / 14.645620 | 0.130768s / 18.784MB / 502 / 15.127926 | 58.285388 ? 58.988969 | 0.75% | `run-44bf4f0a8ed0` |
+| D | 0.585252s / 566.702MB / 411 / 8.699793 | 0.493443s / 253.067MB / 426 / 11.072623 | 46.975447 ? 52.212525 | 15.69% | `run-b50731622d5a` |
+
+Overall best three are A/C/D: **57.191787**, up **1.917852** from 55.273935. Rank **61** at this snapshot; fifth 76.361508, gap **19.169721**. Top-five status was not reached.
+
+Last isolated experiment: removing raw-edge storage via a two-pass parser produced 0.551639 -> 0.545623 seconds median, with overlapping timing distributions and only a small RSS reduction because query state now contributes to peak memory. Not selected: insufficient evidence for another architectural release. The saved recipe and measurements allow later investigation.
+
+The final selected source is the four track trees scored at ccdbb2a. Subsequent scorecard/test documentation changes do not change those trees except PERF.md. No later unverified algorithm is integrated.
+
+Measured remaining costs: A ingestion dominates its first stage profile; B tokenization/index construction dominates after faster intersections; C parsing/hash/lock aggregation dominates; D trades graph construction against sparse-table query work. These are stage-timer findings, not hardware-counter measurements. Top-five likely requires much larger gains than these passes demonstrated; no hardware-limit or optimality claim is made.
+
+For all exact correctness hashes consult engineering/evidence/verification-*-release.json and verification-second-pass.json; the latter covers final B/D on the independently generated full seed. verification-fresh.json includes A/C final fresh outputs and earlier B/D candidates, explicitly superseded by second-pass verification.
+
+Official data source: https://s3.amazonaws.com/raptors.dev/speeddemon.dev/2026/board/board.json . Historical run IDs are retained, not invented.

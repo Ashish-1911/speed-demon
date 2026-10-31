@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-10-31T15:47:16Z",
+  "source": "https://s3.amazonaws.com/raptors.dev/speeddemon.dev/2026/board/board.json",
+  "teams": [
+    {
+      "rank": 1,
+      "team": "Cause Of Death",
+      "overall": 81.80573151957819
+    },
+    {
+      "rank": 2,
+      "team": "Kirk Mates",
+      "overall": 80.76431141418982
+    },
+    {
+      "rank": 3,
+      "team": "NickTrapp",
+      "overall": 80.65625722811905
+    },
+    {
+      "rank": 4,
+      "team": "ALL STAR",
+      "overall": 77.02722119405608
+    },
+    {
+      "rank": 5,
+      "team": "guseinov",
+      "overall": 76.36150796153282
+    },
+    {
+      "rank": 61,
+      "team": "Kujo Jotaro",
+      "overall": 55.27393536895556
+    }
+  ]
+}

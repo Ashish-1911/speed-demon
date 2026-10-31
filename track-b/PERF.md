@@ -7,9 +7,9 @@ Every step from the reference to your final version, each with the live-board ru
 | 0 | The reference, unchanged | (official baseline) | 56.35 | 2290 | 0 |
 | 1 | Baseline C++20 (query-first flat hash table + 6-worker parallel index & query eval) | run-ef90581e290a | 1.4380 | 246.29 | 43.33 (K=7.36) |
 | 2 | Single-pass parallel slice+index + Flat CSR Postings + zero-alloc ping-pong query eval + block I/O | run-09cb3c3ba99e | 1.0952 | 242.00 | 45.81 (K=8.25) |
-| 3 | Document-Centric Batch Phrase Verification (radix-bucketed doc-centric tokenization + batch phrase eval) | (pending) | 0.824* | 242.00* | ~48.9* |
+| 3 | Document-Centric Batch Phrase Verification | run-b6be10cb0a80 | 0.846156 | 254.382080 | 48.209612 (K=9.208571) |
 
-\* *Projected from local 24.7% wall-time reduction on full scale (740.26 ms vs 982.65 ms baseline); pending official liveboard run.*
+Step 3 is now reconciled to the actual official result; its former projection was not a confirmed measurement.
 
 ### Verification Evidence & Measurement Log
 
@@ -80,3 +80,7 @@ All existing tiny/sample/full seed-1 and sample seeds 42/99 outputs matched refe
 The old Step 3 pending estimate is superseded by the historical best above. The galloping branch changes only set intersection, preserving left-to-right Boolean operators and exact phrase verification. Research context: https://arxiv.org/abs/1401.6399 (our candidate uses scalar exponential search, not that paper's SIMD implementation).
 
 Second isolated pass: pack query-term ID and length into one 32-bit word, reducing each dictionary slot from 24 to 16 bytes. Exact lowercase byte comparison remains mandatory. Seven alternating runs in a later, slower host timing window: see `engineering/evidence/b-compact.json`; compare only within that window. Add geometric table growth at half load to prevent nonterminating probes when the query vocabulary exceeds the original fixed capacity. Final canonical S=752, D=1.
+
+### Confirmed selected implementation
+
+Commit `ccdbb2a64b0b6335df8709a03c9d68834443fc8f`, run `run-870bfa70b937`: T=0.709844 s, M=251883520 bytes, S=752, D=1, K=10.012471, **50.027063 machine points**. Every official gate passed. This supersedes the local projections for the selected changes.
