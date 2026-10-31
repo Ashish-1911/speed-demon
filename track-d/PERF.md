@@ -8,7 +8,7 @@ Every step from the reference to your final version, each with the live-board ru
 | 1 | Baseline C++20 | (local verification) | 9.56 | 30 (image MB) | Baseline |
 | 2 | Parallel 6-worker Dijkstra queries on immutable CSR + sequential ordered emit + -flto | run-c2d04a261905 | 2.2107 | 184.84 | 39.96 (K=6.30) |
 | 3 | Exact O(1) early rejection (out_degree[s]==0, in_degree[t]==0 via 217KB bitset) | run-3395c8a050e6 | 1.5937 | 185.01 | 43.34 (K=7.36) |
-| 4 | Exact Bidirectional Dijkstra + cache-aligned 4-ary heap + parallel CSR construction | (pending board run) | 1.18* (WSL) / 0.65* (est bare metal) | 466.7 | Est ~59.5 (K~15.7) |
+| 4 | Exact Bidirectional Dijkstra + cache-aligned 4-ary heap + parallel CSR construction | run-b223180e56c9 | 0.6748 | 622.16 | 45.42 (K=8.10) |
 
 ### Verification Evidence & Measurement Log
 
@@ -51,6 +51,15 @@ Every step from the reference to your final version, each with the live-board ru
   - Seed 99: SHA-256 `7d8a37adcc1fdb2bd8668d47513e42ad8f4459d363553cba96a2cd32994bf9cb` (PASS)
 
 - **Step 4: Exact Bidirectional Dijkstra & Parallel CSR**:
+  - *Official Liveboard Telemetry (Team: Kujo Jotaro, Commit 5a64a38)*:
+    - Run ID: `run-b223180e56c9`
+    - Commit: `5a64a3822e6f8e7b0ca977acb64654d2d1fdc373`
+    - Wall Time (T): **0.674803 s** (vs 1.593717 s on Step 3: **2.36x official bare-metal speedup**)
+    - Peak Memory (M): **652,386,304 bytes** (~622.16 MB)
+    - Source Lines (S): **342**
+    - Dependencies (D): **1**
+    - K Efficiency Coefficient: **8.097188** (up from 7.358379: +0.74 jump)
+    - Machine Points: **45.416712** (up from 43.339108: +2.08 points)
   - *Algorithm Architecture*:
     1. Forward and reverse CSR graphs: Both forward edges $(u \to v)$ and reverse edges $(v \to u)$ constructed in parallel across hardware worker threads directly from memory-mapped `graph.txt`.
     2. Exact directed-graph Bidirectional Dijkstra:
