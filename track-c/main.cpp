@@ -62,30 +62,45 @@ struct alignas(64) Slot {
 
 struct Partition {
     alignas(64) std::atomic_flag lock = ATOMIC_FLAG_INIT;
-    size_t capacity = 256;
-    size_t mask = 255;
+    static constexpr size_t mask = 255;
     std::vector<Slot> slots{256};
+    std::vector<Slot> overflow;
 
     inline void insert_or_update(const char* p, uint32_t len, uint64_t h, uint16_t c) {
         while (lock.test_and_set(std::memory_order_acquire)) {
             _mm_pause();
         }
         size_t idx = h & mask;
-        while (true) {
+        for (size_t step = 0; step < 256; ++step) {
             Slot& s = slots[idx];
             if (s.hash == 0) {
                 s.hash = h;
                 s.ptr = p;
                 s.len = len;
                 s.mask[c >> 6] |= (1ULL << (c & 63));
-                break;
+                lock.clear(std::memory_order_release);
+                return;
             }
             if (s.hash == h && s.len == len && (len == 0 || std::memcmp(s.ptr, p, len) == 0)) {
                 s.mask[c >> 6] |= (1ULL << (c & 63));
-                break;
+                lock.clear(std::memory_order_release);
+                return;
             }
             idx = (idx + 1) & mask;
         }
+        for (Slot& s : overflow) {
+            if (s.hash == h && s.len == len && (len == 0 || std::memcmp(s.ptr, p, len) == 0)) {
+                s.mask[c >> 6] |= (1ULL << (c & 63));
+                lock.clear(std::memory_order_release);
+                return;
+            }
+        }
+        Slot s{};
+        s.hash = h;
+        s.ptr = p;
+        s.len = len;
+        s.mask[c >> 6] |= (1ULL << (c & 63));
+        overflow.push_back(s);
         lock.clear(std::memory_order_release);
     }
 };
@@ -372,6 +387,19 @@ int main(int argc, char** argv) {
     for (const auto& part : partitions) {
         for (const auto& s : part.slots) {
             if (s.hash == 0) continue;
+            for (int w = 0; w < 4; ++w) {
+                uint64_t mask = s.mask[w];
+                while (mask) {
+                    int b = __builtin_ctzll(mask);
+                    size_t c = (w << 6) | b;
+                    if (c < final_aggs.size()) {
+                        final_aggs[c].names_distinct++;
+                    }
+                    mask &= mask - 1;
+                }
+            }
+        }
+        for (const auto& s : part.overflow) {
             for (int w = 0; w < 4; ++w) {
                 uint64_t mask = s.mask[w];
                 while (mask) {
