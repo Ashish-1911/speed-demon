@@ -1,7 +1,7 @@
 # Speed Demon Phase III Handoff
 
 - Branch: `speed-demon`
-- Checkpoint commit: `ba07f44` (refresh after this checkpoint is committed)
+- Checkpoint commit: `d2aba07` (refresh after this checkpoint is committed)
 - Official scored source baseline: `ccdbb2a64b0b6335df8709a03c9d68834443fc8f`
 - Rollback tag: `astro-scored-ccdbb2a`
 - Experiment branch: `exp/phase2`
@@ -36,3 +36,6 @@ The 2026-10-31T17:30:58Z board snapshot confirms the same A/C/D best runs, rank 
 - Windows Docker CLI is present but the Docker Desktop Linux engine is not running; WSL exposes the CLI path but no usable daemon.
 - Restored six-worker A baseline is published as `ba07f44`; no production source change remains pending.
 - No materially stronger D or C candidate was found in this pass; the queue-top D cache and repeated-name C cache remain rejected.
+- Phase IV source-order D scheduling was exact but only ~1–2% locally faster; rejected.
+- Phase IV C lock-free existing-slot update path was slower (median ~2.84 s vs ~2.75 s); rejected.
+- No production Track A/C/D source changes are pending. Docker remains blocked because the Windows CLI has no running Linux engine.

@@ -68,4 +68,8 @@ Second and third isolated passes: sparse per-query states keyed by vertex (with 
 
 Commit `ccdbb2a64b0b6335df8709a03c9d68834443fc8f`, run `run-b50731622d5a`: T=0.493443 s, M=253067264 bytes, S=426, D=1, K=11.072623, **52.212525 machine points**. Every official gate passed. This supersedes the local projections for the selected changes.
 
+### Phase IV rejected experiment
+
+Queries were internally sorted by source vertex to improve CSR locality, with results written back by original query index. The output remained exact, but six alternating full-data runs showed only a small approximately **1–2%** local improvement, below the confidence and championship-impact threshold; the candidate was rejected.
+
 Final two-pass raw-edge-elimination experiment was not selected: paired medians 0.551639 -> 0.545623 seconds, overlapping distributions, small RSS reduction. See engineering/evidence/d-twopass.json.

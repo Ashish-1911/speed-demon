@@ -68,3 +68,7 @@ Correction to older occupancy discussion: seed-1 occupancy does not prove holdou
 ### Confirmed selected implementation
 
 Commit `ccdbb2a64b0b6335df8709a03c9d68834443fc8f`, run `run-44bf4f0a8ed0`: T=0.130768 s, M=18784256 bytes, S=502, D=1, K=15.127926, **58.988969 machine points**. Every official gate passed. This supersedes the local projections for the selected changes.
+
+### Phase IV rejected experiment
+
+An acquire-published slot fast path with atomic country-mask updates was tested to bypass the partition spinlock for existing entries while retaining locked insertion and overflow handling. Six alternating full-data runs were slower locally (median approximately **2.84 s** versus **2.75 s** for production), so the candidate was rejected; no source change was integrated.
