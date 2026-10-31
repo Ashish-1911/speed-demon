@@ -9,7 +9,7 @@ Every step from the reference to your final version, each with the live-board ru
 | 2 | Parallel 6-worker Dijkstra queries on immutable CSR + sequential ordered emit + -flto | run-c2d04a261905 | 2.2107 | 184.84 | 39.96 (K=6.30) |
 | 3 | Exact O(1) early rejection (out_degree[s]==0, in_degree[t]==0 via 217KB bitset) | run-3395c8a050e6 | 1.5937 | 185.01 | 43.34 (K=7.36) |
 | 4 | Exact Bidirectional Dijkstra + cache-aligned 4-ary heap + parallel CSR construction | run-b223180e56c9 | 0.6748 | 622.16 | 45.42 (K=8.10) |
-| 5 | Zero-temp parallel CSR + packed 32-bit epoch_fb + strict nd >= best heap pruning | (pending board run) | 0.80* (WSL) / ~0.50* (est bare metal) | ~450 | Est ~50 (K~10.5) |
+| 5 | Zero-temp parallel CSR + packed 32-bit epoch_fb + strict nd >= best heap pruning | run-a1445bc99d01 | 0.7366 | 503.84 | 45.01 (K=7.95) |
 
 ### Verification Evidence & Measurement Log
 
@@ -84,6 +84,21 @@ Every step from the reference to your final version, each with the live-board ru
     - All scales and seeds (tiny, sample, full, seed 42, seed 99) pass with 100% byte-identical SHA-256 match.
 
 - **Step 5: Zero-Temp Parallel CSR, Packed 32-bit Epoch & Heap Pruning**:
+  - *Official Liveboard Telemetry (Team: Kujo Jotaro, Commit d35d9ac)*:
+    - Run ID: `run-a1445bc99d01`
+    - Commit: `d35d9acd2e820d3617b71eec850383c38d2ee54d`
+    - Wall Time (T): **0.736569 s**
+    - Peak Memory (M): **528,318,464 bytes** (~503.84 MB, down from 622.16 MB: **124 MB reduction**)
+    - Source Lines (S): **383**
+    - Dependencies (D): **1**
+    - K Efficiency Coefficient: **7.948075**
+    - Machine Points: **45.013097**
+    - All gates passed: `check`, `build`, `correctness`, `timeout`, `sandbox` (100% OK)
+  - *Scoring Formula & Trade-off Reconciliation*:
+    - The official formula is K = 100 / (T * M^0.1 * S^0.05 * D^0.02).
+    - While peak memory dropped by 124 MB (-19.0%), the memory penalty M^0.1 decreased by only (503.84 / 622.16)^0.1 = 0.979 (-2.1%).
+    - In contrast, the two-pass memory-mapped parse on the physical server added ~61 ms (+9.1%) to wall time T, which enters linearly (T^1).
+    - Because time scaling dominates the soft M^0.1 exponent, Step 4 (`run-b223180e56c9`: T = 0.6748 s, Points = 45.416712, K = 8.097188) remains the team's official highest-scoring Track D submission on the leaderboard.
   - *Memory & Profiling Decomposition (Gate 1 Audit)*:
     - Forward CSR: 46.96 MB (`head` + `edges`).
     - Reverse CSR: 46.96 MB (`r_head` + `r_edges`).

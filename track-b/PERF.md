@@ -6,7 +6,7 @@ Every step from the reference to your final version, each with the live-board ru
 |---|---|---|---|---|---|
 | 0 | The reference, unchanged | (official baseline) | 56.35 | 2290 | 0 |
 | 1 | Baseline C++20 (query-first flat hash table + 6-worker parallel index & query eval) | run-ef90581e290a | 1.4380 | 246.29 | 43.33 (K=7.36) |
-| 2 | Single-pass parallel slice+index + Flat CSR Postings + zero-alloc ping-pong query eval + block I/O | (pending board run) | 1.48* (WSL) / ~0.40* (est bare metal) | ~250 | Est ~60 (K~16) |
+| 2 | Single-pass parallel slice+index + Flat CSR Postings + zero-alloc ping-pong query eval + block I/O | run-f62da38c68b6 | 1.2213 | 242.11 | 44.63 (K=7.81) |
 
 ### Verification Evidence & Measurement Log
 
@@ -33,6 +33,16 @@ Every step from the reference to your final version, each with the live-board ru
   - Fresh Seed 99 (Sample scale): SHA-256 `e603e9f94513c4ed0ada769340818f72a78331f6fbf38c7ed01c903930a002c2` (PASS)
 
 - **Step 2: Single-Pass Parallel Ingestion, Flat CSR Postings & Zero-Alloc Query Evaluation**:
+  - *Official Liveboard Telemetry (Team: Kujo Jotaro, Commit 1e6346d)*:
+    - Run ID: `run-f62da38c68b6`
+    - Commit: `1e6346d2cb787097fdc6e4ce5bd253958f0fdc9d`
+    - Wall Time (T): **1.221298 s** (vs 1.428689 s on Step 1: **17.0% bare-metal speedup**)
+    - Peak Memory (M): **253,870,080 bytes** (~242.11 MB, down from 246.29 MB)
+    - Source Lines (S): **640**
+    - Dependencies (D): **1**
+    - K Efficiency Coefficient: **7.807918** (up from 7.380316: +0.43 jump)
+    - Points: **44.626761** (up from 43.403748: +1.22 points on Track B)
+    - All gates passed: `check`, `build`, `correctness`, `timeout`, `sandbox` (100% OK)
   - *Bottleneck Decomposition & System Optimizations*:
     1. Single-pass chunked doc slicing + tokenization: Combined separate scanning passes over 253 MB `docs.txt` into one single parallel pass across 6 threads. Document text is tokenized while hot in L1/L2 cache.
     2. 256-byte branch-free ASCII lookup tables: Replaced multi-branch `isalpha`/`isdigit`/`tolower` loops with 64-byte aligned L1-resident `IS_ALNUM` and `TO_LOWER_MAP` tables.
