@@ -87,3 +87,16 @@ The worker-count candidate increased the parser/reduction workers from 6 to 12. 
 Official run `run-b68c2aba294b` for commit `1b99e94d1525f3a02dfdf1641e1d23afff4c1e72` passed every gate but measured `T=0.106818 s`, `M=112234496 bytes`, `K=14.866576`, and **58.610548 points**. The memory increase outweighed the local runtime gain, so production remains at six workers and the prior official run `run-6aa7f879d0cd` remains the Track A best.
 
 The restored six-worker source was subsequently scored as commit `d2aba076b028a1f7bc69b5b45e080376003194d1` in `run-a7a9c1ef5deb`: `T=0.105859 s`, `M=68440064 bytes`, `S=399`, `K=16.486653`, and **60.856624 points**. All official gates passed; this is now the Track A best.
+
+
+## November 1 architecture campaign: Contiguous latency dataflow
+
+Baseline source: `f153bef6550d23ce7547629b7472c0ac68338a31`. This entry supersedes older statements about current best runs, pending experiments and Docker availability; historical measurements above remain historical.
+
+Replace per-group growable latency vectors with compact parsed tuples, per-group counts and one disjoint scatter into a contiguous latency arena. Exact nearest-rank selection and sorted output remain; writes now retry EINTR and partial writes.
+
+Seven alternating native WSL runs after two warmups, GCC15.2 with the track's actual Dockerfile flags, Linux-local resident data: median time **.085440 → .083995 s**. Independent three-run median cgroup-v2 peak: **68,005,888 → 49,422,336 bytes**. Canonical clang-format23.1.3/scc4.1.0 source lines: **399 → 424**. Dependency axis remains 1. Complete local K: **18.3746 → 19.5743**. These are local measurements, not official scores. Applying measured ratios to the best official baseline projects 62.601620 machine points; actual official results must replace this projection.
+
+Correctness: exact reference hashes for tiny/sample/full seed1, sample seeds42/99 and a new full seed20261101, repeated deterministic runs, targeted adversarial tests, ASan/UBSan and TSan. Final production-flag binaries passed the dataset suite. Offline Docker full-seed1 check passed using pinned allowlisted images, offline build, read-only runtime, unprivileged user, memory/pid limits and no network. Docker Desktop is now working.
+
+Evidence: `engineering/evidence/astra/` (per-run timings, kernel memory, static axes, full K, output hashes, sanitizers and Docker logs). Architecture proof, cost models, rejected alternatives and measured byte-reading floors are in `ASTRA_CAMPAIGN.md`. Official result: pending the first submission of this architecture batch; no official improvement is claimed yet.
