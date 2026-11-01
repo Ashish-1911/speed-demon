@@ -73,3 +73,16 @@ Commit `ccdbb2a64b0b6335df8709a03c9d68834443fc8f`, run `run-b50731622d5a`: T=0.4
 Queries were internally sorted by source vertex to improve CSR locality, with results written back by original query index. The output remained exact, but six alternating full-data runs showed only a small approximately **1–2%** local improvement, below the confidence and championship-impact threshold; the candidate was rejected.
 
 Final two-pass raw-edge-elimination experiment was not selected: paired medians 0.551639 -> 0.545623 seconds, overlapping distributions, small RSS reduction. See engineering/evidence/d-twopass.json.
+
+
+## November 1 architecture campaign: Cache-local graph construction
+
+Baseline source: `f153bef6550d23ce7547629b7472c0ac68338a31`. This entry supersedes older statements about current best runs, pending experiments and Docker availability; historical measurements above remain historical.
+
+Coarse vertex-range partitioning gives each worker disjoint small cursor arrays and edge intervals. This replaces graph-wide random degree/cursor writes. Forward/reverse CSR, sparse state, radix heaps and exact bidirectional Dijkstra are retained.
+
+Seven alternating native WSL runs after two warmups, GCC15.2 with the track's actual Dockerfile flags, Linux-local resident data: median time **.511525 → .367220 s**. Independent three-run median cgroup-v2 peak: **268,476,416 → 217,022,464 bytes**. Canonical clang-format23.1.3/scc4.1.0 source lines: **426 → 421**. Dependency axis remains 1. Complete local K: **10.7474 → 13.2593**. These are local measurements, not official scores. Applying measured ratios to the best official baseline projects 56.786124 machine points; actual official results must replace this projection.
+
+Correctness: exact reference hashes for tiny/sample/full seed1, sample seeds42/99 and a new full seed20261101, repeated deterministic runs, targeted adversarial tests, ASan/UBSan and TSan. Final production-flag binaries passed the dataset suite. Offline Docker full-seed1 check passed using pinned allowlisted images, offline build, read-only runtime, unprivileged user, memory/pid limits and no network. Docker Desktop is now working.
+
+Evidence: `engineering/evidence/astra/` (per-run timings, kernel memory, static axes, full K, output hashes, sanitizers and Docker logs). Architecture proof, cost models, rejected alternatives and measured byte-reading floors are in `ASTRA_CAMPAIGN.md`. Official result: pending the first submission of this architecture batch; no official improvement is claimed yet.
