@@ -72,3 +72,16 @@ Commit `ccdbb2a64b0b6335df8709a03c9d68834443fc8f`, run `run-44bf4f0a8ed0`: T=0.1
 ### Phase IV rejected experiment
 
 An acquire-published slot fast path with atomic country-mask updates was tested to bypass the partition spinlock for existing entries while retaining locked insertion and overflow handling. Six alternating full-data runs were slower locally (median approximately **2.84 s** versus **2.75 s** for production), so the candidate was rejected; no source change was integrated.
+
+
+## November 1 architecture campaign: Bounded partition ownership
+
+Baseline source: `f153bef6550d23ce7547629b7472c0ac68338a31`. This entry supersedes older statements about current best runs, pending experiments and Docker availability; historical measurements above remain historical.
+
+Six parsing producers dispatch byte-range name references to six exclusive dictionary owners through bounded SPSC batch rings. This eliminates per-record partition locking without duplicating dictionaries. Release/acquire publication, completion ordering and mapping lifetime preserve exactness; raw escaped interiors remain an injective representation under spec 2.2.
+
+Seven alternating native WSL runs after two warmups, GCC15.2 with the track's actual Dockerfile flags, Linux-local resident data: median time **.108081 → .088467 s**. Independent three-run median cgroup-v2 peak: **20,975,616 → 21,786,624 bytes**. Canonical clang-format23.1.3/scc4.1.0 source lines: **502 → 565**. Dependency axis remains 1. Complete local K: **16.2769 → 17.5412**. These are local measurements, not official scores. Applying measured ratios to the best official baseline projects 60.613405 machine points; actual official results must replace this projection.
+
+Correctness: exact reference hashes for tiny/sample/full seed1, sample seeds42/99 and a new full seed20261101, repeated deterministic runs, targeted adversarial tests, ASan/UBSan and TSan. Final production-flag binaries passed the dataset suite. Offline Docker full-seed1 check passed using pinned allowlisted images, offline build, read-only runtime, unprivileged user, memory/pid limits and no network. Docker Desktop is now working.
+
+Evidence: `engineering/evidence/astra/` (per-run timings, kernel memory, static axes, full K, output hashes, sanitizers and Docker logs). Architecture proof, cost models, rejected alternatives and measured byte-reading floors are in `ASTRA_CAMPAIGN.md`. Official result: pending the first submission of this architecture batch; no official improvement is claimed yet.
