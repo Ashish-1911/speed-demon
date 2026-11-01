@@ -1,0 +1,20 @@
+[
+  {
+    "seconds": 0.08621204700000362,
+    "stderr": "RSS_KiB=284176\n",
+    "sha256": "7e632eb5e25d015275a769b992d8bd38f9489910b6afe14e3c030bcad4e0e5bc",
+    "track": "a",
+    "dataset": "fresh20261101",
+    "expected": "7e632eb5e25d015275a769b992d8bd38f9489910b6afe14e3c030bcad4e0e5bc",
+    "passed": true
+  },
+  {
+    "seconds": 0.08967524899998125,
+    "stderr": "RSS_KiB=284140\n",
+    "sha256": "7e632eb5e25d015275a769b992d8bd38f9489910b6afe14e3c030bcad4e0e5bc",
+    "track": "a",
+    "dataset": "fresh20261101",
+    "expected": "7e632eb5e25d015275a769b992d8bd38f9489910b6afe14e3c030bcad4e0e5bc",
+    "passed": true
+  }
+]

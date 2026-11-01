@@ -1,0 +1,184 @@
+[
+  {
+    "track": "a",
+    "kind": "asan-ubsan",
+    "dataset": "tiny",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "a",
+    "kind": "asan-ubsan",
+    "dataset": "sample",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "a",
+    "kind": "asan-ubsan",
+    "dataset": "empty",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "c",
+    "kind": "asan-ubsan",
+    "dataset": "tiny",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "c",
+    "kind": "asan-ubsan",
+    "dataset": "sample",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "c",
+    "kind": "asan-ubsan",
+    "dataset": "partition-overflow",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "c",
+    "kind": "asan-ubsan",
+    "dataset": "empty-records",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "d",
+    "kind": "asan-ubsan",
+    "dataset": "tiny",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "d",
+    "kind": "asan-ubsan",
+    "dataset": "sample",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "d",
+    "kind": "asan-ubsan",
+    "dataset": "random0",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "d",
+    "kind": "asan-ubsan",
+    "dataset": "empty-edges",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "d",
+    "kind": "asan-ubsan",
+    "dataset": "bucket-boundary",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "d",
+    "kind": "asan-ubsan",
+    "dataset": "epoch-wrap",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "a",
+    "kind": "tsan",
+    "dataset": "tiny",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "a",
+    "kind": "tsan",
+    "dataset": "sample",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "a",
+    "kind": "tsan",
+    "dataset": "empty",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "c",
+    "kind": "tsan",
+    "dataset": "tiny",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "c",
+    "kind": "tsan",
+    "dataset": "sample",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "c",
+    "kind": "tsan",
+    "dataset": "partition-overflow",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "c",
+    "kind": "tsan",
+    "dataset": "empty-records",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "d",
+    "kind": "tsan",
+    "dataset": "tiny",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "d",
+    "kind": "tsan",
+    "dataset": "sample",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "d",
+    "kind": "tsan",
+    "dataset": "random0",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "d",
+    "kind": "tsan",
+    "dataset": "empty-edges",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "d",
+    "kind": "tsan",
+    "dataset": "bucket-boundary",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "track": "d",
+    "kind": "tsan",
+    "dataset": "epoch-wrap",
+    "returncode": 0,
+    "stderr": ""
+  }
+]

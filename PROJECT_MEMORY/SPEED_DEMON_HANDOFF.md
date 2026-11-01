@@ -1,41 +1,23 @@
-# Speed Demon Phase III Handoff
+# Speed Demon architecture handoff — November 1
 
-- Branch: `speed-demon`
-- Checkpoint commit: `f542f9b` (refresh after this checkpoint is committed)
-- Official scored source baseline: `ccdbb2a64b0b6335df8709a03c9d68834443fc8f`
-- Rollback tag: `astro-scored-ccdbb2a`
-- Experiment branch: `exp/phase2`
+- Scope: A/C/D only; B is unchanged and unregistered. Do not register or optimize it.
+- Production baseline: `f153bef6550d23ce7547629b7472c0ac68338a31` on `speed-demon`.
+- Verified architecture batch prepared in `D:/hackathons/Speed Demon-astra`, branch `codex/astra-architecture`; source commits pending. See `ASTRA_CAMPAIGN.md` and `engineering/evidence/astra/`.
+- Existing rollback tag `astro-scored-ccdbb2a` is preserved. Preserve unrelated untracked `scratch/` and passport JSON.
+- Baseline snapshot 2026-11-01T05:32:13Z: rank73; fifth81.182957; A/C/D best portfolio57.350057.
 
-## Confirmed official runs
-
-| Track | Run | T (s) | M (bytes) | S | K | Points |
+| Track | Best official run | T seconds | M bytes | S | K | Points |
 |---|---|---:|---:|---:|---:|---:|
-| A | `run-a7a9c1ef5deb` | 0.105859 | 68440064 | 399 | 16.486653 | 60.856624 |
-| B | `run-870bfa70b937` | 0.709844 | 251883520 | 752 | 10.012471 | 50.027063 |
-| C | `run-44bf4f0a8ed0` | 0.130768 | 18784256 | 502 | 15.127926 | 58.988969 |
-| D | `run-b50731622d5a` | 0.493443 | 253067264 | 426 | 11.072623 | 52.212525 |
+| A | run-4a61d3b39439 | .102003 | 68935680 | 399 | 16.771163 | 61.228159 |
+| C | run-44bf4f0a8ed0 | .130768 | 18784256 | 502 | 15.127926 | 58.988969 |
+| D | run-78cff558089d | .483557 | 265428992 | 426 | 11.079054 | 52.225134 |
 
-Best-three A/C/D geometric mean: `57.229215` machine points. Live board snapshot previously reported rank 61 and fifth place `76.361508`.
+A/D best runs use f153bef. C best uses ccdbb2a, whose C source is identical; latest f153bef C run-6bc9fdb4f566 has58.643614 points. These are distinct runs.
 
-The 2026-10-31T17:50:09Z board snapshot reports rank 63, fifth-place portfolio `76.527660`, and current A/C/D geometric mean `57.229215`, leaving a `19.298446` gap.
+Implemented: A contiguous latency arena (local K+6.5%); C bounded producer/owner pipeline (+7.8%); D vertex-bucket CSR builder (+23.4%). Complete-K local projection portfolio59.951, not official. D degree-two contraction rejected: extra preprocessing/wide edges made it slower and larger. C full sort/reduce rejected by memory/amortization cost model; SCC/landmarks deferred on short-query cost model. Do not repeat prior rejected twelve-worker A, two-pass D, priority-frontier D, source-order D, cached radix tops, non-inserting state, duplicated C dictionaries or minor lock tweaks.
 
-## Phase III findings
+All three selected implementations passed tiny/sample/full1, sample42/99, full20261101, repeated SHA comparisons, targeted edge tests, ASan/UBSan, TSan, sparse growth/epoch-wrap tests and offline Docker full1 checks. Final native release binaries also passed the complete suite. No hardware counters available; measured stage/work counts and byte-scan floor are recorded instead.
 
-- Track D `twopass_d.py` is complete and rejected: exact output, lower local RSS, but no reproducible end-to-end speedup. Evidence: `engineering/evidence/d-twopass.json`.
-- Track D minimum-priority frontier expansion was exact but substantially slower and used much more memory; rejected.
-- Track D cached radix-queue top candidate was locally positive but remains unintegrated pending complete validation and official scoring.
-- Track C repeated-name/country cache was byte-exact with unchanged RSS but only a noisy ~1% local improvement; rejected.
-- Track A 12-worker candidate was locally faster after eight alternating full-data runs, but its official score regressed; it is rejected and six workers are restored.
-- Official A run `run-b68c2aba294b` for `1b99e94` passed all gates but regressed to 58.610548 points (`T=0.106818`, `M=112234496`, `K=14.866576`); six workers restored.
-- Track D cached queue-top candidate was exact but only ~0.7% faster over eight alternating local runs with similar RSS; rejected.
+Docker Desktop29.2.1 is running after reversible preservation/recreation of stale runtime socket directories. WSL data and binaries persist in `/home/mumukshu/sd-astra` (do not use ephemeral `/tmp` for checkpoints). Docker durations are not scoring times. Repo is public with MIT license; image pins and dependency weight unchanged.
 
-## Outstanding
-
-- Preserve unrelated untracked `DEMO-CV-017-unsigned-demo-passport.json` and `scratch/`.
-- Docker checker is currently blocked because Docker is unavailable in WSL.
-- Windows Docker CLI is present but the Docker Desktop Linux engine is not running; WSL exposes the CLI path but no usable daemon.
-- Restored six-worker A baseline is published as `ba07f44`; no production source change remains pending.
-- No materially stronger D or C candidate was found in this pass; the queue-top D cache and repeated-name C cache remain rejected.
-- Phase IV source-order D scheduling was exact but only ~1–2% locally faster; rejected.
-- Phase IV C lock-free existing-slot update path was slower (median ~2.84 s vs ~2.75 s); rejected.
-- No production Track A/C/D source changes are pending. Docker remains blocked because the Windows CLI has no running Linux engine.
+Next executable task: commit each verified track, commit evidence, fast-forward unchanged production, push once, then retrieve exact-commit official A/C/D results. Keep/revert from measured K. Update this handoff and each PERF with run IDs and final source before concluding. Freeze: November2 15:00UTC /20:30IST.

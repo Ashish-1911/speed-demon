@@ -1,0 +1,38 @@
+[
+  {
+    "version": "baseline",
+    "track": "a",
+    "S": 399,
+    "D": 1
+  },
+  {
+    "version": "baseline",
+    "track": "c",
+    "S": 502,
+    "D": 1
+  },
+  {
+    "version": "baseline",
+    "track": "d",
+    "S": 426,
+    "D": 1
+  },
+  {
+    "version": "candidate",
+    "track": "a",
+    "S": 424,
+    "D": 1
+  },
+  {
+    "version": "candidate",
+    "track": "c",
+    "S": 565,
+    "D": 1
+  },
+  {
+    "version": "candidate",
+    "track": "d",
+    "S": 421,
+    "D": 1
+  }
+]
