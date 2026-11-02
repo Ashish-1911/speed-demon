@@ -89,3 +89,29 @@ Evidence: `engineering/evidence/astra/` (per-run timings, kernel memory, static 
 
 Official result: Run `run-00991e107376` for commit `77b5f882aa8e55ef4232dd7554c38ae0b7c757cd` passed all gates (check=true, build=true, correctness=true, timeout=true, sandbox=true) with T=0.445644 s, M=217886720 bytes, S=421, D=1, K=12.026663, and **54.007256 machine points** (+1.782 points, K +8.55%).
 Decision: **IMPROVED**. Cache-local vertex-bucket CSR construction significantly improved runtime (0.483557s -> 0.445644s) and memory (265 MB -> 217 MB). **PRESERVED** as the mandatory new production baseline for Track D.
+
+Official confirmation on clean baseline commit `5febbbfcceada8a712a4b3c0a56e89ce04e6a6cc`:
+- Run ID: `run-de64b2001951`
+- Wall Time (T): **0.351957 s**
+- Peak Memory (M): **217,686,016 bytes**
+- Source Lines (S): **421**
+- Dependencies (D): **1**
+- K Efficiency: **13.535503**
+- Machine Points: **56.573720** (New Personal Best, +2.566 pts over previous best)
+
+## November 2 architecture campaign: Unified Templated State Relaxation & Compact Hash Layout
+
+Baseline source: `5febbbfcceada8a712a4b3c0a56e89ce04e6a6cc` (run `run-de64b2001951`, 56.573720 points).
+
+### Profiling & Architecture:
+1. In bidirectional Dijkstra, query execution accounted for ~65–73% of total process runtime.
+2. The forward and backward relaxation loops had redundant calls to `state.get(v)`, checking epoch stamps twice and duplicating branch conditions.
+3. Templated unified relaxation (`template <bool Reverse> relax`):
+   - Inlines hash probing and merges epoch stamp inspection, stale-entry overwrite, and forward/reverse distance relaxation into a single probe loop.
+   - Sized initial `slots` table to 2,048 entries (fits inside 64 KB L1/L2 cache), avoiding reallocations on short queries while keeping cache lines hot.
+   - Reduced code line count S from 421 to 409 lines, increasing the static code efficiency score $\min(1, S_{\text{ref}}/S)^{0.15}$.
+
+### Local Benchmark Results:
+- 5-run median wall time: **0.5269s → 0.4877s** (**7.44% speedup**, +39.2 ms saved).
+- Full dataset verification: 9/9 suites (`tiny`, `sample`, `seed42`, `seed99`, `full`, `fresh20261101`, `empty-edges`, `epoch-wrap`, `bucket-boundary`) pass 100% bit-for-bit.
+- Sanitizer verification: 0 errors under ASan, UBSan, and TSan.

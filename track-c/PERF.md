@@ -102,4 +102,5 @@ Projected official K: **15.128 → 16.618** (+9.8% K gain). Projected points: **
 
 Correctness: 100% bit-exact SHA-256 match across tiny, sample, full (seed 1), seeds 42 and 99, fresh seed 20261101, empty-records, and partition-overflow adversarial suites.
 Sanitizers: Passed -fsanitize=address,undefined and -fsanitize=thread with 0 leaks, 0 races, and 0 warnings.
-Official result: Pending liveboard run.
+Official result: Run `run-9103d8323bf4` for commit `a63163eced8dac7529bfa43f0a828bbaa6d3d131` passed all gates (check=true, build=true, correctness=true, timeout=true, sandbox=true) with T=0.131682 s, M=16035840 bytes, S=502, D=1, K=15.559920, and **59.600369 machine points** (+0.6114 points over historical best `run-44bf4f0a8ed0`).
+Decision: **IMPROVED**. Memory reduced by 2.75 MB (-14.6%) and K improved to 15.559920. **PRESERVED** as the new winning production baseline for Track C.
