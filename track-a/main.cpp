@@ -52,9 +52,7 @@ struct LocalEpDict {
     std::array<EpSlot, CAP> table{};
     std::vector<std::string_view> endpoints;
 
-    LocalEpDict() {
-        endpoints.reserve(2048);
-    }
+    LocalEpDict() { endpoints.reserve(2048); }
 
     inline uint16_t get_or_insert(const char* ptr, uint16_t len, uint64_t h) {
         if (h == 0) h = 1;
@@ -74,17 +72,27 @@ struct LocalEpDict {
     }
 };
 
-struct LocalGroup {
-    uint32_t errors = 0;
-    std::vector<uint32_t> latencies;
-};
-
 constexpr int HOURS = 72;
 constexpr int MAX_EP = 2048;
+constexpr size_t TOTAL_GROUPS = size_t(HOURS) * MAX_EP;
+
+struct ArenaNode {
+    uint32_t latency;
+    uint32_t next;
+};
+
+struct GroupMeta {
+    uint32_t head = UINT32_MAX;
+    uint32_t errors = 0;
+    uint32_t count = 0;
+};
 
 struct WorkerData {
     LocalEpDict dict;
-    std::vector<LocalGroup> table;
+    std::vector<GroupMeta> groups;
+    std::vector<ArenaNode> arena;
+
+    WorkerData() : groups(TOTAL_GROUPS) { arena.reserve(550000); }
 };
 
 static const char digits[201] =
@@ -154,10 +162,7 @@ int main(int argc, char** argv) {
     fs::create_directories(out_dir);
 
     InputMap input(data_path);
-    if (!input.good()) {
-        std::cerr << "Cannot map requests.log\n";
-        return 1;
-    }
+    if (!input.good()) return 1;
 
     const char* base = input.bytes;
     size_t total_size = input.size;
@@ -168,7 +173,6 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    // Six physical P-cores
     constexpr size_t workers = 6;
     std::vector<const char*> chunk_starts(workers);
     std::vector<const char*> chunk_ends(workers);
@@ -199,26 +203,17 @@ int main(int argc, char** argv) {
     }
 
     std::vector<WorkerData> worker_data(workers);
-    for (size_t i = 0; i < workers; ++i) {
-        worker_data[i].table.resize(size_t(HOURS) * MAX_EP);
-    }
 
-    // Precompute global hour strings (exact 72 hours from 2026-10-30T18:00:00Z to 2026-11-02T17:00:00Z)
     std::array<std::string, HOURS> global_hour_text;
-    {
-        for (int h = 0; h < HOURS; ++h) {
-            int abs_hour = 18 + h;
-            int day = 30 + abs_hour / 24;
-            int rem_hour = abs_hour % 24;
-            int month = 10;
-            if (day > 31) {
-                day -= 31;
-                month = 11;
-            }
-            char buf[32];
-            snprintf(buf, sizeof(buf), "2026-%02d-%02dT%02d:00:00Z", month, day, rem_hour);
-            global_hour_text[h] = buf;
-        }
+    for (int h = 0; h < HOURS; ++h) {
+        int abs_hour = 18 + h;
+        int day = 30 + abs_hour / 24;
+        int rem_hour = abs_hour % 24;
+        int month = 10;
+        if (day > 31) { day -= 31; month = 11; }
+        char buf[32];
+        snprintf(buf, sizeof(buf), "2026-%02d-%02dT%02d:00:00Z", month, day, rem_hour);
+        global_hour_text[h] = buf;
     }
 
     auto parse_worker = [&](size_t wid) {
@@ -226,7 +221,8 @@ int main(int argc, char** argv) {
         const char* end = chunk_ends[wid];
         auto& wd = worker_data[wid];
         auto& dict = wd.dict;
-        auto& table = wd.table;
+        auto& groups = wd.groups;
+        auto& arena = wd.arena;
 
         while (p < end) {
             const char* line_end = static_cast<const char*>(memchr(p, '\n', size_t(end - p)));
@@ -261,9 +257,12 @@ int main(int argc, char** argv) {
                 ++lat_ptr;
             }
 
-            auto& grp = table[size_t(h) * MAX_EP + local_eid];
-            grp.latencies.push_back(latency);
-            grp.errors += (status >= 500 && status <= 599);
+            size_t gid = size_t(h) * MAX_EP + local_eid;
+            auto& g = groups[gid];
+            arena.push_back({latency, g.head});
+            g.head = static_cast<uint32_t>(arena.size() - 1);
+            g.errors += (status >= 500 && status <= 599);
+            g.count += 1;
 
             p = line_end + 1;
         }
@@ -271,12 +270,9 @@ int main(int argc, char** argv) {
 
     std::vector<std::thread> threads;
     threads.reserve(workers);
-    for (size_t i = 0; i < workers; ++i) {
-        threads.emplace_back(parse_worker, i);
-    }
+    for (size_t i = 0; i < workers; ++i) threads.emplace_back(parse_worker, i);
     for (auto& th : threads) th.join();
 
-    // Collect and sort global endpoints
     std::vector<std::string_view> all_endpoints;
     for (size_t w = 0; w < workers; ++w) {
         for (const auto& ep : worker_data[w].dict.endpoints) {
@@ -288,29 +284,20 @@ int main(int argc, char** argv) {
 
     size_t num_global_ep = all_endpoints.size();
 
-    // Map each worker's local ep ID to global ep ID
-    std::vector<std::vector<uint16_t>> worker_ep_map(workers);
+    std::vector<std::vector<uint16_t>> global_to_local(workers, std::vector<uint16_t>(num_global_ep, 0xFFFF));
     for (size_t w = 0; w < workers; ++w) {
         size_t n_local = worker_data[w].dict.endpoints.size();
-        worker_ep_map[w].resize(n_local);
         for (size_t loc = 0; loc < n_local; ++loc) {
             std::string_view ep = worker_data[w].dict.endpoints[loc];
             auto it = std::lower_bound(all_endpoints.begin(), all_endpoints.end(), ep);
-            worker_ep_map[w][loc] = static_cast<uint16_t>(it - all_endpoints.begin());
+            size_t geid = it - all_endpoints.begin();
+            global_to_local[w][geid] = static_cast<uint16_t>(loc);
         }
     }
 
-    // Parallelize merging, percentile calculation, and output formatting
     std::vector<std::string> thread_out(workers);
-    for (size_t w = 0; w < workers; ++w) {
-        thread_out[w].resize(2 * 1024 * 1024);
-    }
+    for (size_t w = 0; w < workers; ++w) thread_out[w].resize(2 * 1024 * 1024);
     std::vector<size_t> thread_out_len(workers, 0);
-
-    struct MergedGroup {
-        uint32_t errors = 0;
-        std::vector<uint32_t> latencies;
-    };
 
     auto process_worker = [&](size_t wid) {
         int h_start = static_cast<int>(wid * HOURS / workers);
@@ -320,54 +307,51 @@ int main(int argc, char** argv) {
         char* out_ptr = out_str.data();
         char* out_end = out_ptr + out_str.size();
 
-        int num_hours = h_end - h_start;
-        std::vector<MergedGroup> local_merged(size_t(num_hours) * num_global_ep);
+        std::vector<uint32_t> latencies;
+        latencies.reserve(8192);
 
-        // Merge from all workers for this worker's hours
-        for (size_t w = 0; w < workers; ++w) {
-            size_t n_local = worker_data[w].dict.endpoints.size();
-            for (int h = h_start; h < h_end; ++h) {
-                int local_h = h - h_start;
-                for (size_t loc = 0; loc < n_local; ++loc) {
-                    auto& src = worker_data[w].table[size_t(h) * MAX_EP + loc];
-                    if (src.latencies.empty() && src.errors == 0) continue;
-                    uint16_t geid = worker_ep_map[w][loc];
-                    auto& dst = local_merged[size_t(local_h) * num_global_ep + geid];
-                    dst.errors += src.errors;
-                    if (dst.latencies.empty()) {
-                        dst.latencies = std::move(src.latencies);
-                    } else {
-                        dst.latencies.insert(dst.latencies.end(), src.latencies.begin(), src.latencies.end());
-                        std::vector<uint32_t>().swap(src.latencies);
-                    }
-                }
-            }
-        }
-
-        // Format lines in exact order
         for (int h = h_start; h < h_end; ++h) {
-            int local_h = h - h_start;
             const std::string& h_str = global_hour_text[h];
 
             for (size_t e = 0; e < num_global_ep; ++e) {
-                auto& g = local_merged[size_t(local_h) * num_global_ep + e];
-                auto& v = g.latencies;
-                if (v.empty()) continue;
+                uint32_t total_count = 0;
+                uint32_t total_errors = 0;
+                for (size_t w = 0; w < workers; ++w) {
+                    uint16_t loc = global_to_local[w][e];
+                    if (loc == 0xFFFF) continue;
+                    const auto& g = worker_data[w].groups[size_t(h) * MAX_EP + loc];
+                    total_count += g.count;
+                    total_errors += g.errors;
+                }
 
-                size_t n = v.size();
+                if (total_count == 0) continue;
+
+                latencies.resize(total_count);
+                size_t write_idx = 0;
+                for (size_t w = 0; w < workers; ++w) {
+                    uint16_t loc = global_to_local[w][e];
+                    if (loc == 0xFFFF) continue;
+                    const auto& wd = worker_data[w];
+                    const auto& arena = wd.arena;
+                    for (uint32_t cur = wd.groups[size_t(h) * MAX_EP + loc].head; cur != UINT32_MAX; cur = arena[cur].next) {
+                        latencies[write_idx++] = arena[cur].latency;
+                    }
+                }
+
+                size_t n = total_count;
                 size_t p50 = (50 * n + 99) / 100 - 1;
                 size_t p95 = (95 * n + 99) / 100 - 1;
                 size_t p99 = (99 * n + 99) / 100 - 1;
 
                 if (n <= 128) {
-                    std::sort(v.begin(), v.end());
+                    std::sort(latencies.begin(), latencies.end());
                 } else {
-                    std::nth_element(v.begin(), v.begin() + p99, v.end());
-                    std::nth_element(v.begin(), v.begin() + p95, v.begin() + p99 + 1);
-                    std::nth_element(v.begin(), v.begin() + p50, v.begin() + p95 + 1);
+                    std::nth_element(latencies.begin(), latencies.begin() + p99, latencies.end());
+                    std::nth_element(latencies.begin(), latencies.begin() + p95, latencies.begin() + p99 + 1);
+                    std::nth_element(latencies.begin(), latencies.begin() + p50, latencies.begin() + p95 + 1);
                 }
 
-                uint64_t ppm = uint64_t(g.errors) * 1000000ULL / n;
+                uint64_t ppm = uint64_t(total_errors) * 1000000ULL / n;
 
                 if (out_ptr + 256 > out_end) {
                     size_t cur_len = out_ptr - out_str.data();
@@ -387,22 +371,20 @@ int main(int argc, char** argv) {
                 out_ptr = append_u32(out_ptr, static_cast<uint32_t>(n));
                 *out_ptr++ = ' ';
 
-                out_ptr = append_u32(out_ptr, v[p50]);
+                out_ptr = append_u32(out_ptr, latencies[p50]);
                 *out_ptr++ = ' ';
 
-                out_ptr = append_u32(out_ptr, v[p95]);
+                out_ptr = append_u32(out_ptr, latencies[p95]);
                 *out_ptr++ = ' ';
 
-                out_ptr = append_u32(out_ptr, v[p99]);
+                out_ptr = append_u32(out_ptr, latencies[p99]);
                 *out_ptr++ = ' ';
 
-                out_ptr = append_u32(out_ptr, g.errors);
+                out_ptr = append_u32(out_ptr, total_errors);
                 *out_ptr++ = ' ';
 
                 out_ptr = append_u64(out_ptr, ppm);
                 *out_ptr++ = '\n';
-
-                std::vector<uint32_t>().swap(v);
             }
         }
         thread_out_len[wid] = out_ptr - out_str.data();
@@ -410,12 +392,9 @@ int main(int argc, char** argv) {
 
     std::vector<std::thread> p_threads;
     p_threads.reserve(workers);
-    for (size_t i = 0; i < workers; ++i) {
-        p_threads.emplace_back(process_worker, i);
-    }
+    for (size_t i = 0; i < workers; ++i) p_threads.emplace_back(process_worker, i);
     for (auto& th : p_threads) th.join();
 
-    // Fast write to output file
     int out_fd = open(out_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (out_fd < 0) return 1;
 

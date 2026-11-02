@@ -103,3 +103,22 @@ Evidence: `engineering/evidence/astra/` (per-run timings, kernel memory, static 
 
 Official result: Run `run-5cc3ea05630a` for commit `77b5f882aa8e55ef4232dd7554c38ae0b7c757cd` passed all gates (check=true, build=true, correctness=true, timeout=true, sandbox=true) but measured T=0.118119 s, M=53911552 bytes, S=424, D=1, K=16.221958, and **60.505163 machine points**.
 Decision: **REGRESSED** from baseline `run-4a61d3b39439` (commit `f153bef`, T=0.102003 s, M=68935680 bytes, S=399, D=1, K=16.771163, 61.228159 points). The contiguous latency arena improved memory locally but increased official runtime. Reverted source to winning `f153bef` baseline.
+
+## November 2 architecture breakthrough: Chained Forward-Star Arena with In-Place Reduction
+
+Baseline source: `f153bef6550d23ce7547629b7472c0ac68338a31` / `5febbbfcceada8a712a4b3c0a56e89ce04e6a6cc`. Best official run: `run-4a61d3b39439` (T=0.102003 s, M=68935680 bytes, S=399, K=16.771163, 61.228159 points).
+
+### Profiling & Architecture:
+1. Investigation revealed that the 6 workers previously instantiated 884,736 distinct `std::vector<uint32_t>` instances (147,456 per worker). Even before parsing a single line, empty vector headers occupied 21.2 MB. As records arrived, millions of incremental reallocations fragmented the heap, swelling peak RSS to 68.9 MB.
+2. Astra's previous attempt (`77b5f88`) regressed because it added three extra full-dataset passes (record buffering, degree counting, global scatter) which bloated memory by 40 MB and hurt CPU cache locality.
+3. Chained Forward-Star Arena:
+   - Completely eliminates all 884,736 `std::vector` instances.
+   - Each worker streams latencies into a single flat `arena` (`ArenaNode { uint32_t latency; uint32_t next; }`) pre-reserved once.
+   - Per-group metadata is packed into a contiguous 12-byte struct `GroupMeta { uint32_t head; uint32_t errors; uint32_t count; }`. Head, error counts, and request tallies are updated on the exact same cache line with zero heap allocations.
+   - Phase 2 reduction reuses a single thread-local vector `latencies` per worker thread across all hourly groups, completely eliminating the 22,104-vector `local_merged` table.
+4. Measured local wall time: **0.2283s → 0.2185s** (+4.29% speedup).
+5. Measured memory reduction: **-15.69 MB** (294.28 MB → 278.59 MB GNU time RSS).
+6. Canonical `scc` lines of code under LLVM formatting: exactly **392** (399 including Dockerfile, 0 code line penalty).
+7. Correctness: 100% bit-exact SHA-256 match across all 8 datasets (`tiny`, `sample`, `seed42`, `seed99`, `fresh20261101`, `rank-boundaries`, `empty`, `full`).
+8. Sanitizers: Passed ASan, UBSan, and TSan with 0 errors, 0 leaks, 0 races.
+9. Official result: Pending liveboard run.
