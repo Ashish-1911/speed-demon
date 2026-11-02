@@ -1,6 +1,7 @@
 // Speed Demon 2026 Track C — Compact Dictionary with Separated Metadata
 #include <algorithm>
 #include <array>
+#include <barrier>
 #include <atomic>
 #include <cstdint>
 #include <cstring>
@@ -182,9 +183,6 @@ static inline std::string money(int64_t value) {
 
 static std::vector<const char *>
 find_chunk_boundaries(const char *data, size_t size, int num_threads) {
-  std::vector<const char *> bounds;
-  bounds.reserve(num_threads + 1);
-
   const char *p = data;
   const char *end = data + size;
 
@@ -195,54 +193,99 @@ find_chunk_boundaries(const char *data, size_t size, int num_threads) {
     ++p;
   if (p < end)
     ++p;
-  bounds.push_back(p);
 
-  if (num_threads <= 1) {
-    bounds.push_back(end);
+  const char *base = p;
+  std::vector<const char *> bounds(num_threads + 1);
+  bounds[0] = base;
+  bounds[num_threads] = end;
+
+  if (num_threads <= 1 || size_t(end - base) < size_t(num_threads * 128)) {
+    size_t chunk_size = size_t(end - base) / size_t(num_threads);
+    uint64_t total_quotes = 0;
+    int target = 1;
+    size_t next_target = chunk_size;
+    while (p < end && target < num_threads) {
+      char b = *p++;
+      if (b == '"')
+        total_quotes++;
+      else if (b == '\n') {
+        if (size_t(p - base) >= next_target && (total_quotes & 1) == 0) {
+          bounds[target++] = p;
+          next_target = target * chunk_size;
+        }
+      }
+    }
+    while (target < num_threads)
+      bounds[target++] = end;
     return bounds;
   }
 
-  size_t chunk_size = size / num_threads;
-  uint64_t total_quotes = 0;
-  __m256i q = _mm256_set1_epi8('"');
+  size_t effective_size = size_t(end - base);
+  size_t chunk_size = effective_size / size_t(num_threads);
 
-  int target_thread = 1;
-  size_t next_target = chunk_size;
+  std::vector<const char *> slice_start(num_threads);
+  std::vector<const char *> slice_end(num_threads);
+  for (int i = 0; i < num_threads; ++i) {
+    slice_start[i] = base + size_t(i) * chunk_size;
+    slice_end[i] =
+        (i == num_threads - 1) ? end : (base + size_t(i + 1) * chunk_size);
+  }
 
-  while (p < end && target_thread < num_threads) {
-    if ((size_t)(p - data) + 128 < next_target && p + 128 <= end) {
-      __m256i v0 = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(p));
-      __m256i v1 =
-          _mm256_loadu_si256(reinterpret_cast<const __m256i *>(p + 32));
-      __m256i v2 =
-          _mm256_loadu_si256(reinterpret_cast<const __m256i *>(p + 64));
-      __m256i v3 =
-          _mm256_loadu_si256(reinterpret_cast<const __m256i *>(p + 96));
-      uint32_t m0 = _mm256_movemask_epi8(_mm256_cmpeq_epi8(v0, q));
-      uint32_t m1 = _mm256_movemask_epi8(_mm256_cmpeq_epi8(v1, q));
-      uint32_t m2 = _mm256_movemask_epi8(_mm256_cmpeq_epi8(v2, q));
-      uint32_t m3 = _mm256_movemask_epi8(_mm256_cmpeq_epi8(v3, q));
-      total_quotes += _mm_popcnt_u32(m0) + _mm_popcnt_u32(m1) +
-                      _mm_popcnt_u32(m2) + _mm_popcnt_u32(m3);
-      p += 128;
-      continue;
-    }
+  std::vector<uint64_t> slice_quotes(num_threads, 0);
+  std::vector<uint64_t> prefix_quotes(num_threads, 0);
+  std::barrier sync_point(num_threads);
 
-    char b = *p++;
-    if (b == '"')
-      total_quotes++;
-    else if (b == '\n') {
-      if ((size_t)(p - data) >= next_target && (total_quotes % 2 == 0)) {
-        bounds.push_back(p);
-        target_thread++;
-        next_target = target_thread * chunk_size;
+  std::vector<std::thread> workers;
+  workers.reserve(num_threads);
+  for (int tid = 0; tid < num_threads; ++tid) {
+    workers.emplace_back([&, tid]() {
+      const char *sp = slice_start[tid];
+      const char *sp_end = slice_end[tid];
+      uint64_t quotes = 0;
+      __m256i q = _mm256_set1_epi8('"');
+      while (sp + 32 <= sp_end) {
+        __m256i v = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(sp));
+        quotes +=
+            _mm_popcnt_u32(_mm256_movemask_epi8(_mm256_cmpeq_epi8(v, q)));
+        sp += 32;
       }
-    }
-  }
+      while (sp < sp_end) {
+        if (*sp++ == '"')
+          ++quotes;
+      }
+      slice_quotes[tid] = quotes;
 
-  while (bounds.size() <= (size_t)num_threads) {
-    bounds.push_back(end);
+      sync_point.arrive_and_wait();
+
+      if (tid == 0) {
+        prefix_quotes[0] = 0;
+        for (int i = 1; i < num_threads; ++i)
+          prefix_quotes[i] = prefix_quotes[i - 1] + slice_quotes[i - 1];
+      }
+
+      sync_point.arrive_and_wait();
+
+      if (tid > 0) {
+        const char *scan_p = slice_start[tid];
+        uint64_t total_q = prefix_quotes[tid];
+        while (scan_p < end) {
+          char b = *scan_p++;
+          if (b == '"')
+            ++total_q;
+          else if (b == '\n') {
+            if ((total_q & 1) == 0) {
+              bounds[tid] = scan_p;
+              break;
+            }
+          }
+        }
+        if (scan_p >= end)
+          bounds[tid] = end;
+      }
+    });
   }
+  for (auto &w : workers)
+    w.join();
   return bounds;
 }
 

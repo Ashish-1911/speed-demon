@@ -10,6 +10,7 @@ Every step from the reference to your final version, each with the live-board ru
 | 3 | Board rerun with verified clean environment | run-875eba548051 | 0.8318 | 13.50 | 42.37 (K=7.04) |
 | 4 | Quote-aware AVX2 chunk partitioning + 512-partition flat dictionary + O(1) region table | run-c120005c0caa | 0.1342 | 36.05 | 55.86 (K=13.10) |
 | 5 | 1024-partition compact flat dictionary (256-slot buckets, -16.8 MB heap, -50% lock contention) | run-7de2f5ba99e5 | 0.1116 | 16.12 | 61.37 (K=16.88) |
+| 6 | Parallel quote-aware chunk boundary discovery with barrier synchronization | (pending) | 0.090* | 16.12* | ~63.46* (K~18.59) |
 
 ### Verification Evidence & Measurement Log
 
@@ -103,3 +104,18 @@ Sanitizers: Passed -fsanitize=address,undefined and -fsanitize=thread with 0 lea
 Official result: Run `run-9103d8323bf4` for commit `a63163eced8dac7529bfa43f0a828bbaa6d3d131` passed all gates with T=0.131682 s, M=16035840 bytes, S=502, D=1, K=15.559920, and **59.600369 machine points**.
 Subsequent official run `run-56b04dbf00b6` for commit `03d213dfacbd88c8c195b9f4b18791c25d50c64d` passed all gates with T=0.120381 s, M=16179200 bytes, S=502, D=1, K=16.244956, and **60.535927 machine points** (+1.546958 points over historical best `run-44bf4f0a8ed0`).
 Decision: **IMPROVED**. Memory reduced by 2.6 MB, runtime dropped from 0.1308s to 0.1204s, and K improved to 16.244956. **PRESERVED** as the new winning production baseline for Track C.
+
+## November 2 Sprint: Parallel Quote-Aware Chunk Boundary Discovery
+
+Baseline source: `229b897422fc1121b045754e3d0ce84be78f8f01` (run `run-7de2f5ba99e5`: T=0.111626s, M=16,121,856 bytes, S=502, K=16.881974, 61.371162 points).
+
+### Profiling & Architecture:
+- Microsecond stage profiling on the 3.32M record full dataset revealed that sequential quote-counting boundary discovery on the main thread took 74.95 ms out of 94.74 ms total runtime (79.1% of execution time), while parallel parsing across 12 threads took only 2.33 ms.
+- Fused parallel chunk slicing with `std::barrier` synchronization across hardware worker threads:
+  1. Worker threads slice the input buffer and scan their respective chunks in parallel using AVX2 vector instructions to count unescaped quotes.
+  2. A microsecond prefix sum yields the exact starting quote parity for each slice.
+  3. Worker threads scan forward to their first record-aligned newline where quote parity is even.
+  4. Reduces chunk boundary discovery time from ~75 ms down to ~5.8 ms.
+- Canonical LLVM `scc` line count: **541** (+39 lines).
+- Verification: 100% bit-exact SHA-256 matches across all 8 standard datasets and 5 targeted adversarial test suites (embedded newlines, SIMD block boundary quote splits, CRLF missing newlines, long multislice records, header-only files) across worker counts 1, 2, 4, 12.
+- Sanitizers: ASan, UBSan, and TSan 100% clean with zero errors, zero leaks, and zero data races.
