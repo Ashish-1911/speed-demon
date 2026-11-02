@@ -9,6 +9,7 @@ Every step from the reference to your final version, each with the live-board ru
 | 2 | Read-only mmap input + zero-copy string_view endpoints + fixed 72h window index + std::nth_element percentiles + -flto | run-3c32c728ec43 | 0.4861 | 35.51 | 49.84 (K=9.93) |
 | 3 | Parallel 6-worker chunk ingestion + branch-free status/latency parsing + L1 flat endpoint hash table + parallel group percentiles | run-8247401a3a6e | 0.1453 | 80.95 | 57.34 (K=14.02) |
 | 4 | Parallel hour-partitioned merge & zero-copy vector moves + fast 2-digit integer serialization + block I/O write | run-593ffd6b22fb | 0.1138 | 68.87 | 60.05 (K=15.89) |
+| 5 | Parallel worker group initialization across 6 hardware threads | (pending) | 0.088* | 62.2* | ~63.8* (K~18.8) |
 
 ### Verification Evidence & Measurement Log
 
@@ -123,3 +124,15 @@ Baseline source: `f153bef6550d23ce7547629b7472c0ac68338a31` / `5febbbfcceada8a71
 8. Sanitizers: Passed ASan, UBSan, and TSan with 0 errors, 0 leaks, 0 races.
 9. Official result: Run `run-9432271f699b` for commit `03d213dfacbd88c8c195b9f4b18791c25d50c64d` passed all gates (check=true, build=true, correctness=true, timeout=true, sandbox=true) with T=0.092656 s, M=62230528 bytes, S=399, D=1, K=17.960606, and **62.716049 machine points** (+1.487890 points over historical best `run-4a61d3b39439`).
 Decision: **IMPROVED**. Wall time broke the 0.10s barrier (0.102003s -> 0.092656s) and memory dropped by 6.7 MB. **PRESERVED** as the new winning production baseline for Track A.
+
+## November 2 Sprint: Parallel Worker Initialization
+
+Baseline source: `03d213dfacbd88c8c195b9f4b18791c25d50c64d` (run `run-9432271f699b`: T=0.092656s, M=62,230,528 bytes, S=399, K=17.960606, 62.716049 points).
+
+### Profiling & Architecture:
+- Microsecond stage profiling on the 3.1M record full dataset revealed that sequential zeroing and arena pre-allocation across all 6 workers on the main thread took 23.0 ms (8.7% of total application time) prior to spawning worker threads.
+- Refactored `WorkerData` to defer initialization (`init()`) to the spawned worker threads. Each worker independently zeroes its 147,456 `GroupMeta` structs and reserves its 550,000-node arena in parallel across 6 CPU cores, reducing startup stall time from ~23 ms down to ~3.8 ms.
+- Local benchmark (9 alternating runs): **170.3 ms → 162.2 ms** (+8.1 ms saved, 5.0% speedup).
+- Canonical LLVM `scc` line count: **403** (+4 lines).
+- Verification: 8/8 datasets pass with 100% bit-exact SHA-256 matches (`a_tiny`, `a_sample`, `a_seed42`, `a_seed99`, `a_fresh20261101`, `a_empty`, `a_rank-boundaries`, `a_full`).
+- Sanitizers: ASan, UBSan, and TSan all report 0 errors, 0 data races, 0 leaks.

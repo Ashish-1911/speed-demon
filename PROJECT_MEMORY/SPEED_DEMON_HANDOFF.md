@@ -7,11 +7,11 @@
 
 | Track | Best official run | Commit | T seconds | M bytes | S | K | Points | Status |
 |---|---|---|---:|---:|---:|---:|---:|---|
-| A | run-9432271f699b | 03d213d | 0.092656 | 62230528 | 399 | 17.960606 | 62.716049 | NEW PERSONAL BEST (Chained Forward-Star Arena) |
-| C | run-56b04dbf00b6 | 03d213d | 0.120381 | 16179200 | 502 | 16.244956 | 60.535927 | NEW PERSONAL BEST (Separated Metadata Compact Dict) |
-| D | run-de64b2001951 | 5febbbf | 0.351957 | 217686016 | 421 | 13.535503 | 56.573720 | NEW PERSONAL BEST (Bucketed CSR) |
+| A | run-9432271f699b | 03d213d | 0.092656 | 62230528 | 399 | 17.960606 | 62.716049 | WINNING BEST (Chained Forward-Star Arena) |
+| C | run-7de2f5ba99e5 | 229b897 | 0.111626 | 16121856 | 502 | 16.881974 | 61.371162 | WINNING BEST (Separated Metadata Compact Dict) |
+| D | run-de64b2001951 | 5febbbf | 0.351957 | 217686016 | 421 | 13.535503 | 56.573720 | WINNING BEST (Bucketed CSR) |
 
-- Portfolio: (62.716049 × 60.535927 × 56.573720)^(1/3) = 59.887411.
+- Portfolio: (62.716049 × 61.371162 × 56.573720)^(1/3) = 60.161614 (Rank #83 on live board).
 - Top 5 leaderboard:
   1. another ello: 84.948491
   2. ALL STAR: 84.637955
