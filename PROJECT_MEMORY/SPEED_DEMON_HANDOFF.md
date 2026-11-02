@@ -1,23 +1,26 @@
-# Speed Demon architecture handoff — November 1
+# Speed Demon architecture handoff — November 2
 
 - Scope: A/C/D only; B is unchanged and unregistered. Do not register or optimize it.
-- Production baseline: `f153bef6550d23ce7547629b7472c0ac68338a31` on `speed-demon`.
-- Verified architecture batch prepared in `D:/hackathons/Speed Demon-astra`, branch `codex/astra-architecture`; source commits pending. See `ASTRA_CAMPAIGN.md` and `engineering/evidence/astra/`.
-- Existing rollback tag `astro-scored-ccdbb2a` is preserved. Preserve unrelated untracked `scratch/` and passport JSON.
-- Baseline snapshot 2026-11-01T05:32:13Z: rank73; fifth81.182957; A/C/D best portfolio57.350057.
+- Production baseline post-recovery: Restored Track A (`f153bef`), restored Track C (`f153bef`), preserved Track D (`77b5f88` bucketed CSR).
+- Existing rollback tags and references preserved. Untracked `scratch/` and passport JSON preserved.
+- Official snapshot 2026-11-02T04:27:28Z: rank 90; top 5 threshold 82.562243; A/C/D best portfolio 57.995110.
 
-| Track | Best official run | T seconds | M bytes | S | K | Points |
-|---|---|---:|---:|---:|---:|---:|
-| A | run-4a61d3b39439 | .102003 | 68935680 | 399 | 16.771163 | 61.228159 |
-| C | run-44bf4f0a8ed0 | .130768 | 18784256 | 502 | 15.127926 | 58.988969 |
-| D | run-78cff558089d | .483557 | 265428992 | 426 | 11.079054 | 52.225134 |
+| Track | Best official run | Commit | T seconds | M bytes | S | K | Points | Status |
+|---|---|---|---:|---:|---:|---:|---:|---|
+| A | run-4a61d3b39439 | f153bef | 0.102003 | 68935680 | 399 | 16.771163 | 61.228159 | Restored (77b5f88 regressed: 60.505163) |
+| C | run-44bf4f0a8ed0 | ccdbb2a/f153bef | 0.130768 | 18784256 | 502 | 15.127926 | 58.988969 | Restored (77b5f88 regressed: 58.764891) |
+| D | run-00991e107376 | 77b5f88 | 0.445644 | 217886720 | 421 | 12.026663 | 54.007256 | Preserved winning Astra bucketed CSR |
 
-A/D best runs use f153bef. C best uses ccdbb2a, whose C source is identical; latest f153bef C run-6bc9fdb4f566 has58.643614 points. These are distinct runs.
+- Portfolio: (61.228159 × 58.988969 × 54.007256)^(1/3) = 57.995110.
+- Top 5 leaderboard:
+  1. another ello: 84.948491
+  2. ALL STAR: 84.637955
+  3. SALAAR: 84.019250
+  4. Cause Of Death: 83.305269
+  5. LippInc: 82.562243
+  Gap to 5th place: 24.567 points.
 
-Implemented: A contiguous latency arena (local K+6.5%); C bounded producer/owner pipeline (+7.8%); D vertex-bucket CSR builder (+23.4%). Complete-K local projection portfolio59.951, not official. D degree-two contraction rejected: extra preprocessing/wide edges made it slower and larger. C full sort/reduce rejected by memory/amortization cost model; SCC/landmarks deferred on short-query cost model. Do not repeat prior rejected twelve-worker A, two-pass D, priority-frontier D, source-order D, cached radix tops, non-inserting state, duplicated C dictionaries or minor lock tweaks.
-
-All three selected implementations passed tiny/sample/full1, sample42/99, full20261101, repeated SHA comparisons, targeted edge tests, ASan/UBSan, TSan, sparse growth/epoch-wrap tests and offline Docker full1 checks. Final native release binaries also passed the complete suite. No hardware counters available; measured stage/work counts and byte-scan floor are recorded instead.
-
-Docker Desktop29.2.1 is running after reversible preservation/recreation of stale runtime socket directories. WSL data and binaries persist in `/home/mumukshu/sd-astra` (do not use ephemeral `/tmp` for checkpoints). Docker durations are not scoring times. Repo is public with MIT license; image pins and dependency weight unchanged.
-
-Next executable task: commit each verified track, commit evidence, fast-forward unchanged production, push once, then retrieve exact-commit official A/C/D results. Keep/revert from measured K. Update this handoff and each PERF with run IDs and final source before concluding. Freeze: November2 15:00UTC /20:30IST.
+Next executable tasks:
+1. Commit restored A/C sources and updated PERF logs, push to origin/speed-demon to secure baseline.
+2. High-impact profiling & algorithmic engineering on D (bucket CSR + query pruning), C (compact dictionary memory reduction), A (multi-rank selection/arena latency).
+3. Freeze: November 2, 2026 — 15:00 UTC / 20:30 IST.

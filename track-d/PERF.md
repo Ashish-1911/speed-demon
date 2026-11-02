@@ -85,4 +85,7 @@ Seven alternating native WSL runs after two warmups, GCC15.2 with the track's ac
 
 Correctness: exact reference hashes for tiny/sample/full seed1, sample seeds42/99 and a new full seed20261101, repeated deterministic runs, targeted adversarial tests, ASan/UBSan and TSan. Final production-flag binaries passed the dataset suite. Offline Docker full-seed1 check passed using pinned allowlisted images, offline build, read-only runtime, unprivileged user, memory/pid limits and no network. Docker Desktop is now working.
 
-Evidence: `engineering/evidence/astra/` (per-run timings, kernel memory, static axes, full K, output hashes, sanitizers and Docker logs). Architecture proof, cost models, rejected alternatives and measured byte-reading floors are in `ASTRA_CAMPAIGN.md`. Official result: pending the first submission of this architecture batch; no official improvement is claimed yet.
+Evidence: `engineering/evidence/astra/` (per-run timings, kernel memory, static axes, full K, output hashes, sanitizers and Docker logs). Architecture proof, cost models, rejected alternatives and measured byte-reading floors are in `ASTRA_CAMPAIGN.md`.
+
+Official result: Run `run-00991e107376` for commit `77b5f882aa8e55ef4232dd7554c38ae0b7c757cd` passed all gates (check=true, build=true, correctness=true, timeout=true, sandbox=true) with T=0.445644 s, M=217886720 bytes, S=421, D=1, K=12.026663, and **54.007256 machine points** (+1.782 points, K +8.55%).
+Decision: **IMPROVED**. Cache-local vertex-bucket CSR construction significantly improved runtime (0.483557s -> 0.445644s) and memory (265 MB -> 217 MB). **PRESERVED** as the mandatory new production baseline for Track D.

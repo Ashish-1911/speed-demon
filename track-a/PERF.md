@@ -99,4 +99,7 @@ Seven alternating native WSL runs after two warmups, GCC15.2 with the track's ac
 
 Correctness: exact reference hashes for tiny/sample/full seed1, sample seeds42/99 and a new full seed20261101, repeated deterministic runs, targeted adversarial tests, ASan/UBSan and TSan. Final production-flag binaries passed the dataset suite. Offline Docker full-seed1 check passed using pinned allowlisted images, offline build, read-only runtime, unprivileged user, memory/pid limits and no network. Docker Desktop is now working.
 
-Evidence: `engineering/evidence/astra/` (per-run timings, kernel memory, static axes, full K, output hashes, sanitizers and Docker logs). Architecture proof, cost models, rejected alternatives and measured byte-reading floors are in `ASTRA_CAMPAIGN.md`. Official result: pending the first submission of this architecture batch; no official improvement is claimed yet.
+Evidence: `engineering/evidence/astra/` (per-run timings, kernel memory, static axes, full K, output hashes, sanitizers and Docker logs). Architecture proof, cost models, rejected alternatives and measured byte-reading floors are in `ASTRA_CAMPAIGN.md`.
+
+Official result: Run `run-5cc3ea05630a` for commit `77b5f882aa8e55ef4232dd7554c38ae0b7c757cd` passed all gates (check=true, build=true, correctness=true, timeout=true, sandbox=true) but measured T=0.118119 s, M=53911552 bytes, S=424, D=1, K=16.221958, and **60.505163 machine points**.
+Decision: **REGRESSED** from baseline `run-4a61d3b39439` (commit `f153bef`, T=0.102003 s, M=68935680 bytes, S=399, D=1, K=16.771163, 61.228159 points). The contiguous latency arena improved memory locally but increased official runtime. Reverted source to winning `f153bef` baseline.
