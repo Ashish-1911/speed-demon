@@ -92,10 +92,7 @@ struct WorkerData {
     std::vector<GroupMeta> groups;
     std::vector<ArenaNode> arena;
 
-    void init() {
-        groups.assign(TOTAL_GROUPS, GroupMeta{});
-        arena.reserve(550000);
-    }
+    WorkerData() : groups(TOTAL_GROUPS) { arena.reserve(550000); }
 };
 
 static const char digits[201] =
@@ -223,7 +220,6 @@ int main(int argc, char** argv) {
         const char* p = chunk_starts[wid];
         const char* end = chunk_ends[wid];
         auto& wd = worker_data[wid];
-        wd.init();
         auto& dict = wd.dict;
         auto& groups = wd.groups;
         auto& arena = wd.arena;

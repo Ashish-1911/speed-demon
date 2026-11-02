@@ -115,3 +115,6 @@ Baseline source: `5febbbfcceada8a712a4b3c0a56e89ce04e6a6cc` (run `run-de64b20019
 - 5-run median wall time: **0.5269s → 0.4877s** (**7.44% speedup**, +39.2 ms saved).
 - Full dataset verification: 9/9 suites (`tiny`, `sample`, `seed42`, `seed99`, `full`, `fresh20261101`, `empty-edges`, `epoch-wrap`, `bucket-boundary`) pass 100% bit-for-bit.
 - Sanitizer verification: 0 errors under ASan, UBSan, and TSan.
+
+Official scoring on commit `aa0b46e` (`run-8fbbcf8f...`): Formatting under official LLVM style expanded templated functions to S=442 lines, reducing the static axis multiplier. Clean commit `5febbbfcceada8a712a4b3c0a56e89ce04e6a6cc` (`run-de64b2001951`) achieved superior overall K=13.535503 and **56.573720 machine points**.
+Decision: **PRESERVED** commit `5febbbfcceada8a712a4b3c0a56e89ce04e6a6cc` (`run-de64b2001951`) as the winning production implementation for Track D.

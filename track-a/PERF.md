@@ -9,7 +9,8 @@ Every step from the reference to your final version, each with the live-board ru
 | 2 | Read-only mmap input + zero-copy string_view endpoints + fixed 72h window index + std::nth_element percentiles + -flto | run-3c32c728ec43 | 0.4861 | 35.51 | 49.84 (K=9.93) |
 | 3 | Parallel 6-worker chunk ingestion + branch-free status/latency parsing + L1 flat endpoint hash table + parallel group percentiles | run-8247401a3a6e | 0.1453 | 80.95 | 57.34 (K=14.02) |
 | 4 | Parallel hour-partitioned merge & zero-copy vector moves + fast 2-digit integer serialization + block I/O write | run-593ffd6b22fb | 0.1138 | 68.87 | 60.05 (K=15.89) |
-| 5 | Parallel worker group initialization across 6 hardware threads | (pending) | 0.088* | 62.2* | ~63.8* (K~18.8) |
+| 5 | Chained forward-star arena with in-place reduction (production baseline) | run-9432271f699b | 0.0927 | 62.23 | 62.72 (K=17.96) |
+| 6 | Parallel worker group initialization across 6 hardware threads | run-4e0b7f4520ec | 0.1020 | 61.66 | 61.68 (rejected: kernel page contention) |
 
 ### Verification Evidence & Measurement Log
 
@@ -136,3 +137,5 @@ Baseline source: `03d213dfacbd88c8c195b9f4b18791c25d50c64d` (run `run-9432271f69
 - Canonical LLVM `scc` line count: **403** (+4 lines).
 - Verification: 8/8 datasets pass with 100% bit-exact SHA-256 matches (`a_tiny`, `a_sample`, `a_seed42`, `a_seed99`, `a_fresh20261101`, `a_empty`, `a_rank-boundaries`, `a_full`).
 - Sanitizers: ASan, UBSan, and TSan all report 0 errors, 0 data races, 0 leaks.
+- Official result: Run `run-4e0b7f4520ec` on commit `1e025e9fb0a64b756f03ed458187e0e5b903fc22` passed all gates (check=true, build=true, correctness=true, timeout=true, sandbox=true) with T=0.102029 s, M=61661184 bytes, S=403, D=1, K=17.121604, and **61.677223 machine points**.
+- Decision: **REGRESSED** from winning baseline run `run-9432271f699b` (T=0.092656 s, 62.716049 pts). Under the 6-vCPU cgroup container environment, concurrent parallel page faulting across 6 spawned threads serialized on kernel MM locks, increasing wall time by 9.4 ms. Following competition engineering protocol, `track-a/main.cpp` was immediately reverted to winning source `03d213d` (`run-9432271f699b`).

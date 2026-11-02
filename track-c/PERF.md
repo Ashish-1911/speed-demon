@@ -9,9 +9,7 @@ Every step from the reference to your final version, each with the live-board ru
 | 2 | Global canonical name dictionary + 256-bit country membership bitsets + -flto | run-f0261cacf78e | 1.0262 | 13.62 | 40.05 (K=6.32) |
 | 3 | Board rerun with verified clean environment | run-875eba548051 | 0.8318 | 13.50 | 42.37 (K=7.04) |
 | 4 | Quote-aware AVX2 chunk partitioning + 512-partition flat dictionary + O(1) region table | run-c120005c0caa | 0.1342 | 36.05 | 55.86 (K=13.10) |
-| 5 | 1024-partition compact flat dictionary (256-slot buckets, -16.8 MB heap, -50% lock contention) | (pending) | 0.118* | 19.30* | ~60.05* (K~15.88) |
-
-\* *Projected from local containerized speedup (122.5 ms vs 144.0 ms, -14.9% wall time, -50% dictionary RAM); pending official liveboard run.*
+| 5 | 1024-partition compact flat dictionary (256-slot buckets, -16.8 MB heap, -50% lock contention) | run-7de2f5ba99e5 | 0.1116 | 16.12 | 61.37 (K=16.88) |
 
 ### Verification Evidence & Measurement Log
 
