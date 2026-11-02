@@ -102,5 +102,6 @@ Projected official K: **15.128 → 16.618** (+9.8% K gain). Projected points: **
 
 Correctness: 100% bit-exact SHA-256 match across tiny, sample, full (seed 1), seeds 42 and 99, fresh seed 20261101, empty-records, and partition-overflow adversarial suites.
 Sanitizers: Passed -fsanitize=address,undefined and -fsanitize=thread with 0 leaks, 0 races, and 0 warnings.
-Official result: Run `run-9103d8323bf4` for commit `a63163eced8dac7529bfa43f0a828bbaa6d3d131` passed all gates (check=true, build=true, correctness=true, timeout=true, sandbox=true) with T=0.131682 s, M=16035840 bytes, S=502, D=1, K=15.559920, and **59.600369 machine points** (+0.6114 points over historical best `run-44bf4f0a8ed0`).
-Decision: **IMPROVED**. Memory reduced by 2.75 MB (-14.6%) and K improved to 15.559920. **PRESERVED** as the new winning production baseline for Track C.
+Official result: Run `run-9103d8323bf4` for commit `a63163eced8dac7529bfa43f0a828bbaa6d3d131` passed all gates with T=0.131682 s, M=16035840 bytes, S=502, D=1, K=15.559920, and **59.600369 machine points**.
+Subsequent official run `run-56b04dbf00b6` for commit `03d213dfacbd88c8c195b9f4b18791c25d50c64d` passed all gates with T=0.120381 s, M=16179200 bytes, S=502, D=1, K=16.244956, and **60.535927 machine points** (+1.546958 points over historical best `run-44bf4f0a8ed0`).
+Decision: **IMPROVED**. Memory reduced by 2.6 MB, runtime dropped from 0.1308s to 0.1204s, and K improved to 16.244956. **PRESERVED** as the new winning production baseline for Track C.

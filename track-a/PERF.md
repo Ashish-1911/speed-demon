@@ -121,4 +121,5 @@ Baseline source: `f153bef6550d23ce7547629b7472c0ac68338a31` / `5febbbfcceada8a71
 6. Canonical `scc` lines of code under LLVM formatting: exactly **392** (399 including Dockerfile, 0 code line penalty).
 7. Correctness: 100% bit-exact SHA-256 match across all 8 datasets (`tiny`, `sample`, `seed42`, `seed99`, `fresh20261101`, `rank-boundaries`, `empty`, `full`).
 8. Sanitizers: Passed ASan, UBSan, and TSan with 0 errors, 0 leaks, 0 races.
-9. Official result: Pending liveboard run.
+9. Official result: Run `run-9432271f699b` for commit `03d213dfacbd88c8c195b9f4b18791c25d50c64d` passed all gates (check=true, build=true, correctness=true, timeout=true, sandbox=true) with T=0.092656 s, M=62230528 bytes, S=399, D=1, K=17.960606, and **62.716049 machine points** (+1.487890 points over historical best `run-4a61d3b39439`).
+Decision: **IMPROVED**. Wall time broke the 0.10s barrier (0.102003s -> 0.092656s) and memory dropped by 6.7 MB. **PRESERVED** as the new winning production baseline for Track A.
