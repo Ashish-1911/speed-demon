@@ -10,7 +10,7 @@ Every step from the reference to your final version, each with the live-board ru
 | 3 | Board rerun with verified clean environment | run-875eba548051 | 0.8318 | 13.50 | 42.37 (K=7.04) |
 | 4 | Quote-aware AVX2 chunk partitioning + 512-partition flat dictionary + O(1) region table | run-c120005c0caa | 0.1342 | 36.05 | 55.86 (K=13.10) |
 | 5 | 1024-partition compact flat dictionary (256-slot buckets, -16.8 MB heap, -50% lock contention) | run-7de2f5ba99e5 | 0.1116 | 16.12 | 61.37 (K=16.88) |
-| 6 | Parallel quote-aware chunk boundary discovery with barrier synchronization | (pending) | 0.090* | 16.12* | ~63.46* (K~18.59) |
+| 6 | Parallel quote-aware chunk boundary discovery with barrier synchronization | run-8de06b07b87c | 0.1022 | 16.22 | 62.06 (K=17.43) |
 
 ### Verification Evidence & Measurement Log
 
