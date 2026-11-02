@@ -88,3 +88,18 @@ Evidence: `engineering/evidence/astra/` (per-run timings, kernel memory, static 
 
 Official result: Run `run-68119f9ea335` for commit `77b5f882aa8e55ef4232dd7554c38ae0b7c757cd` passed all gates (check=true, build=true, correctness=true, timeout=true, sandbox=true) with T=0.125485 s, M=20066304 bytes, S=565, D=1, K=14.972621, and **58.764891 machine points**.
 Decision: **REGRESSED** from baseline `run-44bf4f0a8ed0` (commit `ccdbb2a` / `f153bef`, T=0.130768 s, M=18784256 bytes, S=502, D=1, K=15.127926, 58.988969 points). Although runtime dropped slightly, increased memory and source lines lowered overall K. Reverted source to winning `f153bef` baseline.
+
+## November 2 architecture breakthrough: Compact Dictionary with Separated Metadata
+
+Baseline source: `f153bef6550d23ce7547629b7472c0ac68338a31` / `5febbbfcceada8a712a4b3c0a56e89ce04e6a6cc`. Best official run: `run-44bf4f0a8ed0` (T=0.130768 s, M=18784256 bytes, S=502, K=15.127926, 58.988969 points).
+
+Architecture: Separated 2 KB L1-cache-resident hash arrays (`hashes[256]` + `entry_indices[256]`) from distinct name entry storage (`entries`). Eliminates 9.05 MB of empty 56-byte slot memory across the 1024 partitions. Name entries are dynamically appended on demand (only ~100,520 entries allocated vs 262,144 static slots), reducing dictionary heap allocation from 14.68 MB to 4.82 MB. Linear probing occurs entirely within a 2 KB contiguous 64-bit array in L1 cache without touching entry memory or crossing 64-byte cache lines. Exact collision and overflow handling are preserved for holdout safety.
+
+Seven alternating native WSL runs, GCC 15.2, Linux tmpfs: median runtime **0.08874s → 0.08279s** (6.7% faster).
+Measured peak RSS: **217,692 KiB → 212,928 KiB** (-4,764 KiB / ~4.8 MB reduction).
+Canonical `scc` source lines: **502 → 505** (only +3 lines).
+Projected official K: **15.128 → 16.618** (+9.8% K gain). Projected points: **58.989 → 61.029** (+2.04 points).
+
+Correctness: 100% bit-exact SHA-256 match across tiny, sample, full (seed 1), seeds 42 and 99, fresh seed 20261101, empty-records, and partition-overflow adversarial suites.
+Sanitizers: Passed -fsanitize=address,undefined and -fsanitize=thread with 0 leaks, 0 races, and 0 warnings.
+Official result: Pending liveboard run.

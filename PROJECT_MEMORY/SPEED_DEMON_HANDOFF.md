@@ -21,6 +21,8 @@
   Gap to 5th place: 24.567 points.
 
 Next executable tasks:
-1. Commit restored A/C sources and updated PERF logs, push to origin/speed-demon to secure baseline.
-2. High-impact profiling & algorithmic engineering on D (bucket CSR + query pruning), C (compact dictionary memory reduction), A (multi-rank selection/arena latency).
-3. Freeze: November 2, 2026 — 15:00 UTC / 20:30 IST.
+1. Submitting Track C breakthrough: Compact Dictionary with Separated Metadata (T -6.7%, M -4.8MB, S 505, projected points 61.03).
+2. Retrieve official run ID and scored SHA for Track C; verify gates and score on liveboard.
+3. Keep or revert Track C based on official K.
+4. Next candidate: Track D compact state query optimization (T -4.5%, S 435, projected points 54.93).
+5. Freeze: November 2, 2026 — 15:00 UTC / 20:30 IST.
